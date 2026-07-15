@@ -327,26 +327,20 @@ export default function TaskApp() {
                           {task.text}
                         </div>
                       </div>
-                      {!task.done && (task.group || task.responsible) && (
+                      {!task.done && task.responsible && (
                         <span className="order-last ml-7 flex w-full flex-wrap gap-1 sm:ml-0 sm:contents">
-                          {task.group && (
-                            <span className="inline-block rounded-full border border-line px-2 py-0.5 text-xs font-medium text-muted">
-                              {task.group}
-                            </span>
-                          )}
-                          {task.responsible &&
-                            task.responsible
-                              .split(",")
-                              .map((name) => name.trim())
-                              .filter(Boolean)
-                              .map((name) => (
-                                <span
-                                  key={name}
-                                  className="inline-block rounded-full bg-accent-light px-2 py-0.5 text-xs font-medium text-accent"
-                                >
-                                  {name}
-                                </span>
-                              ))}
+                          {task.responsible
+                            .split(",")
+                            .map((name) => name.trim())
+                            .filter(Boolean)
+                            .map((name) => (
+                              <span
+                                key={name}
+                                className="inline-block rounded-full bg-accent-light px-2 py-0.5 text-xs font-medium text-accent"
+                              >
+                                {name}
+                              </span>
+                            ))}
                         </span>
                       )}
                       {task.done && (
