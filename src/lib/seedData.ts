@@ -27,7 +27,9 @@ function toText(item: SeedItem): string {
 export function buildTasksFromSeed(items: SeedItem[], prefix: string): Task[] {
   const counts: Record<string, number> = {};
   return items.map((item) => {
-    const base = `${prefix}-${slug(item.group)}-${slug(item.name)}`;
+    const base = item.group
+      ? `${prefix}-${slug(item.group)}-${slug(item.name)}`
+      : `${prefix}-${slug(item.name)}`;
     counts[base] = (counts[base] ?? 0) + 1;
     const id = counts[base] > 1 ? `${base}-${counts[base]}` : base;
     return {
@@ -44,13 +46,13 @@ export function buildTasksFromSeed(items: SeedItem[], prefix: string): Task[] {
 /* Seed data transcribed from seeds-review.md (Pekka + Liina 90v suunnitelma). */
 
 export const TODO_SEED: SeedItem[] = [
-  { group: "Muista", name: "Tarjoiluastiat ja ottimet", resp: "Liina" },
-  { group: "Muista", name: "Jäkälänmetsästys", resp: "Marko" },
-  { group: "Muista", name: "Banh Mi -sämpylät" },
-  { group: "Muista", name: "Sunnuntain leipä" },
-  { group: "Muista", name: "Flan-resepti + aineet" },
-  { group: "Muista", name: "Ruokavalioiden tarkistus" },
-  { group: "Muista", name: "Lounaan ja Yöpalan astiat" },
+  { group: "", name: "Tarjoiluastiat ja ottimet", resp: "Liina" },
+  { group: "", name: "Jäkälänmetsästys", resp: "Marko" },
+  { group: "", name: "Banh Mi -sämpylät" },
+  { group: "", name: "Sunnuntain leipä" },
+  { group: "", name: "Flan-resepti + aineet" },
+  { group: "", name: "Ruokavalioiden tarkistus" },
+  { group: "", name: "Lounaan ja Yöpalan astiat" },
 ];
 
 export const MISE_SEED: SeedItem[] = [
