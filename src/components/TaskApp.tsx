@@ -39,6 +39,8 @@ export default function TaskApp() {
   const [modalDay, setModalDay] = useState("");
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressTriggered = useRef(false);
+  const pointerStart = useRef<{ x: number; y: number } | null>(null);
+  const pointerMoved = useRef(false);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -190,24 +192,38 @@ export default function TaskApp() {
     closeModal();
   }
 
-  function handleTaskPointerDown(sectionId: string, task: Task) {
+  function handleTaskPointerDown(e: React.PointerEvent, sectionId: string, task: Task) {
+    pointerStart.current = { x: e.clientX, y: e.clientY };
+    pointerMoved.current = false;
     longPressTriggered.current = false;
     longPressTimer.current = setTimeout(() => {
+      if (pointerMoved.current) return;
       longPressTriggered.current = true;
-      openEditModal(sectionId, task);
+      toggleTask(sectionId, task.id);
     }, LONG_PRESS_MS);
   }
 
-  function handleTaskPointerUp(sectionId: string, taskId: string) {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
+  function handleTaskPointerMove(e: React.PointerEvent) {
+    const start = pointerStart.current;
+    if (!start) return;
+    const MOVE_THRESHOLD_PX = 10;
+    const dx = Math.abs(e.clientX - start.x);
+    const dy = Math.abs(e.clientY - start.y);
+    if (dx > MOVE_THRESHOLD_PX || dy > MOVE_THRESHOLD_PX) {
+      pointerMoved.current = true;
+      cancelLongPress();
     }
-    if (longPressTriggered.current) {
-      longPressTriggered.current = false;
-      return;
-    }
-    toggleTask(sectionId, taskId);
+  }
+
+  function handleTaskPointerUp(sectionId: string, task: Task) {
+    cancelLongPress();
+    const moved = pointerMoved.current;
+    const triggered = longPressTriggered.current;
+    pointerStart.current = null;
+    pointerMoved.current = false;
+    longPressTriggered.current = false;
+    if (moved || triggered) return;
+    openEditModal(sectionId, task);
   }
 
   function cancelLongPress() {
@@ -215,6 +231,13 @@ export default function TaskApp() {
       clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
     }
+  }
+
+  function resetTaskPointer() {
+    cancelLongPress();
+    pointerStart.current = null;
+    pointerMoved.current = false;
+    longPressTriggered.current = false;
   }
 
   function toggleTask(sectionId: string, taskId: string) {
@@ -488,12 +511,13 @@ export default function TaskApp() {
                         className="h-4 w-4 shrink-0 accent-ok"
                       />
                       <div
-                        onPointerDown={() => handleTaskPointerDown(section.id, task)}
-                        onPointerUp={() => handleTaskPointerUp(section.id, task.id)}
-                        onPointerLeave={cancelLongPress}
-                        onPointerCancel={cancelLongPress}
+                        onPointerDown={(e) => handleTaskPointerDown(e, section.id, task)}
+                        onPointerMove={handleTaskPointerMove}
+                        onPointerUp={() => handleTaskPointerUp(section.id, task)}
+                        onPointerLeave={resetTaskPointer}
+                        onPointerCancel={resetTaskPointer}
                         onContextMenu={(e) => e.preventDefault()}
-                        className="min-w-0 flex-1 cursor-pointer touch-none select-none"
+                        className="min-w-0 flex-1 cursor-pointer select-none"
                       >
                         <div
                           className={`font-heading text-sm font-medium ${
