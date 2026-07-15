@@ -23,6 +23,9 @@ export default function TaskApp() {
   const [newTaskGroup, setNewTaskGroup] = useState<Record<string, string>>({});
   const [openAddForm, setOpenAddForm] = useState<Record<string, boolean>>({});
   const [searchQuery, setSearchQuery] = useState("");
+  const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
+  const dragState = useRef<{ sectionId: string; taskId: string } | null>(null);
+  const taskRefs = useRef<Map<string, HTMLLIElement>>(new Map());
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -141,6 +144,51 @@ export default function TaskApp() {
           : s
       )
     );
+  }
+
+  function reorderTask(sectionId: string, taskId: string, targetTaskId: string) {
+    updateSections((sections) =>
+      sections.map((s) => {
+        if (s.id !== sectionId) return s;
+        const tasks = [...s.tasks];
+        const fromIndex = tasks.findIndex((t) => t.id === taskId);
+        const toIndex = tasks.findIndex((t) => t.id === targetTaskId);
+        if (fromIndex === -1 || toIndex === -1 || fromIndex === toIndex) return s;
+        const [moved] = tasks.splice(fromIndex, 1);
+        tasks.splice(toIndex, 0, moved);
+        return { ...s, tasks };
+      })
+    );
+  }
+
+  function handleDragPointerDown(
+    e: React.PointerEvent<HTMLSpanElement>,
+    sectionId: string,
+    taskId: string
+  ) {
+    e.preventDefault();
+    dragState.current = { sectionId, taskId };
+    setDraggingTaskId(taskId);
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+
+  function handleDragPointerMove(e: React.PointerEvent<HTMLSpanElement>) {
+    const drag = dragState.current;
+    if (!drag) return;
+    const y = e.clientY;
+    for (const [id, el] of taskRefs.current) {
+      if (id === drag.taskId) continue;
+      const rect = el.getBoundingClientRect();
+      if (y >= rect.top && y <= rect.bottom) {
+        reorderTask(drag.sectionId, drag.taskId, id);
+        break;
+      }
+    }
+  }
+
+  function handleDragPointerUp() {
+    dragState.current = null;
+    setDraggingTaskId(null);
   }
 
   if (loading) {
@@ -307,8 +355,27 @@ export default function TaskApp() {
                   {visibleTasks.map((task) => (
                     <li
                       key={task.id}
-                      className="group flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md px-2 py-2 hover:bg-accent-light/40"
+                      ref={(el) => {
+                        if (el) taskRefs.current.set(task.id, el);
+                        else taskRefs.current.delete(task.id);
+                      }}
+                      className={`group flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md px-2 py-2 hover:bg-accent-light/40 ${
+                        draggingTaskId === task.id ? "opacity-50" : ""
+                      }`}
                     >
+                      {!task.done && !query && (
+                        <span
+                          onPointerDown={(e) => handleDragPointerDown(e, section.id, task.id)}
+                          onPointerMove={handleDragPointerMove}
+                          onPointerUp={handleDragPointerUp}
+                          onPointerCancel={handleDragPointerUp}
+                          aria-hidden="true"
+                          title="Drag to reorder"
+                          className="shrink-0 cursor-grab touch-none select-none px-0.5 text-muted active:cursor-grabbing"
+                        >
+                          ⋮⋮
+                        </span>
+                      )}
                       <input
                         type="checkbox"
                         checked={task.done}
