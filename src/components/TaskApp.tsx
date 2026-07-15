@@ -123,7 +123,7 @@ export default function TaskApp() {
 
   if (loading) {
     return (
-      <div className="flex flex-1 items-center justify-center text-zinc-500">
+      <div className="flex flex-1 items-center justify-center text-muted">
         Loading tasks…
       </div>
     );
@@ -131,7 +131,7 @@ export default function TaskApp() {
 
   if (!state) {
     return (
-      <div className="flex flex-1 items-center justify-center text-red-600">
+      <div className="flex flex-1 items-center justify-center text-warn">
         {error ?? "Something went wrong."}
       </div>
     );
@@ -143,19 +143,29 @@ export default function TaskApp() {
       : state.sections.filter((s) => s.id === filter);
 
   return (
-    <div className="flex flex-1 flex-col sm:flex-row">
-      <nav className="flex flex-col gap-1 border-b border-zinc-200 p-4 sm:w-56 sm:border-b-0 sm:border-r">
-        <ul className="flex flex-row gap-1 overflow-x-auto sm:flex-col sm:overflow-visible">
+    <div className="flex flex-1 flex-col bg-background">
+      <header className="bg-accent px-4 py-4 text-center text-white sm:px-6 sm:py-5">
+        <h1 className="font-heading text-xl font-semibold sm:text-2xl">
+          Pekka + Liina 90v
+        </h1>
+        <p className="mt-0.5 text-xs text-white/80 sm:text-sm">
+          Yhteinen tehtävälista
+        </p>
+      </header>
+
+      <div className="flex flex-1 flex-col sm:flex-row">
+      <nav className="flex flex-col gap-1 border-b border-line bg-card p-2 sm:w-56 sm:border-b-0 sm:border-r sm:p-4">
+        <ul className="flex flex-row flex-wrap gap-1 sm:flex-col sm:flex-nowrap">
           <li>
             <button
               onClick={() => setFilter(ALL_FILTER)}
-              className={`flex w-full items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 text-left text-sm font-medium transition-colors ${
+              className={`flex items-center gap-2 whitespace-nowrap rounded-full px-2.5 py-1.5 text-left text-xs font-medium transition-colors sm:w-full sm:px-3 sm:py-2 sm:text-sm ${
                 filter === ALL_FILTER
-                  ? "bg-zinc-900 text-white"
-                  : "text-zinc-700 hover:bg-zinc-100"
+                  ? "bg-accent text-white"
+                  : "text-foreground hover:bg-accent-light"
               }`}
             >
-              All
+              kaikki
             </button>
           </li>
           {state.sections.map((section) => {
@@ -165,10 +175,10 @@ export default function TaskApp() {
               <li key={section.id}>
                 <button
                   onClick={() => setFilter(section.id)}
-                  className={`flex w-full items-center justify-between gap-2 whitespace-nowrap rounded-md px-3 py-2 text-left text-sm font-medium transition-colors ${
+                  className={`flex items-center justify-between gap-2 whitespace-nowrap rounded-full px-2.5 py-1.5 text-left text-xs font-medium transition-colors sm:w-full sm:px-3 sm:py-2 sm:text-sm ${
                     isActive
-                      ? "bg-zinc-900 text-white"
-                      : "text-zinc-700 hover:bg-zinc-100"
+                      ? "bg-accent text-white"
+                      : "text-foreground hover:bg-accent-light"
                   }`}
                 >
                   <span>{section.name}</span>
@@ -177,7 +187,7 @@ export default function TaskApp() {
                       className={`ml-2 rounded-full px-1.5 py-0.5 text-xs ${
                         isActive
                           ? "bg-white/20 text-white"
-                          : "bg-zinc-200 text-zinc-600"
+                          : "bg-accent-light text-accent"
                       }`}
                     >
                       {remaining}
@@ -192,42 +202,45 @@ export default function TaskApp() {
 
       <main className="flex-1 p-6">
         {error && (
-          <div className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+          <div className="mb-4 rounded-md bg-warn-bg px-3 py-2 text-sm text-warn">
             {error}
           </div>
         )}
 
         <div className="flex flex-col gap-8">
           {visibleSections.map((section) => (
-            <section key={section.id}>
-              <h1 className="mb-4 text-xl font-semibold text-zinc-900">
+            <section
+              key={section.id}
+              className="rounded-2xl border border-line bg-card p-4 shadow-sm sm:p-6"
+            >
+              <h1 className="mb-4 font-heading text-2xl font-semibold text-accent">
                 {section.name}
               </h1>
 
               <ul className="mb-4 flex flex-col gap-1">
                 {section.tasks.length === 0 && (
-                  <li className="text-sm text-zinc-500">No tasks yet.</li>
+                  <li className="text-sm text-muted">No tasks yet.</li>
                 )}
                 {section.tasks.map((task) => (
                   <li
                     key={task.id}
-                    className="group flex items-center gap-3 rounded-md px-2 py-2 hover:bg-zinc-50"
+                    className="group flex items-center gap-3 rounded-md px-2 py-2 hover:bg-accent-light/40"
                   >
                     <input
                       type="checkbox"
                       checked={task.done}
                       onChange={() => toggleTask(section.id, task.id)}
-                      className="h-4 w-4 shrink-0 accent-zinc-900"
+                      className="h-4 w-4 shrink-0 accent-ok"
                     />
                     <span
                       className={`flex-1 text-sm ${
-                        task.done ? "text-zinc-400 line-through" : "text-zinc-800"
+                        task.done ? "text-muted line-through" : "text-foreground"
                       }`}
                     >
                       {task.text}
                     </span>
                     {task.responsible && (
-                      <span className="shrink-0 rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">
+                      <span className="shrink-0 rounded-full bg-accent-light px-2 py-0.5 text-xs font-medium text-accent">
                         {task.responsible}
                       </span>
                     )}
@@ -235,7 +248,7 @@ export default function TaskApp() {
                       onClick={() => deleteTask(section.id, task.id)}
                       aria-label={`Delete task ${task.text}`}
                       title="Delete task"
-                      className="shrink-0 rounded p-1 text-zinc-400 opacity-0 hover:bg-red-50 hover:text-red-600 group-hover:opacity-100"
+                      className="shrink-0 rounded p-1 text-muted opacity-0 hover:bg-warn-bg hover:text-warn group-hover:opacity-100"
                     >
                       ✕
                     </button>
@@ -248,7 +261,7 @@ export default function TaskApp() {
                   e.preventDefault();
                   addTask(section.id);
                 }}
-                className="flex flex-wrap gap-2"
+                className="flex flex-col gap-2"
               >
                 <input
                   value={newTaskText[section.id] ?? ""}
@@ -257,31 +270,34 @@ export default function TaskApp() {
                   }
                   placeholder="Add a task…"
                   maxLength={500}
-                  className="min-w-0 flex-1 rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500"
+                  className="min-w-0 w-full rounded-md border border-line px-2.5 py-1.5 text-sm outline-none focus:border-accent"
                 />
-                <input
-                  value={newTaskResponsible[section.id] ?? ""}
-                  onChange={(e) =>
-                    setNewTaskResponsible((prev) => ({
-                      ...prev,
-                      [section.id]: e.target.value,
-                    }))
-                  }
-                  placeholder="Responsible (optional)"
-                  maxLength={100}
-                  className="w-40 min-w-0 rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500"
-                />
-                <button
-                  type="submit"
-                  className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
-                >
-                  Add
-                </button>
+                <div className="flex gap-2">
+                  <input
+                    value={newTaskResponsible[section.id] ?? ""}
+                    onChange={(e) =>
+                      setNewTaskResponsible((prev) => ({
+                        ...prev,
+                        [section.id]: e.target.value,
+                      }))
+                    }
+                    placeholder="Responsible"
+                    maxLength={100}
+                    className="w-32 min-w-0 flex-1 rounded-md border border-line px-2.5 py-1.5 text-xs outline-none focus:border-accent sm:w-40 sm:flex-none sm:text-sm"
+                  />
+                  <button
+                    type="submit"
+                    className="rounded-full bg-accent px-3 py-1.5 text-xs font-medium text-white hover:brightness-110 sm:text-sm"
+                  >
+                    Add
+                  </button>
+                </div>
               </form>
             </section>
           ))}
         </div>
       </main>
+      </div>
     </div>
   );
 }

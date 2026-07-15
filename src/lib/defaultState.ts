@@ -7,8 +7,8 @@ export function defaultState(): TaskState {
       { id: "todo", name: "todo", tasks: buildTasksFromSeed(TODO_SEED, "todo") },
       { id: "misa", name: "misa", tasks: buildTasksFromSeed(MISE_SEED, "misa") },
       {
-        id: "raaka-aineet",
-        name: "raaka-aineet",
+        id: "aineet",
+        name: "aineet",
         tasks: buildTasksFromSeed(RAAKA_SEED, "raaka"),
       },
     ],

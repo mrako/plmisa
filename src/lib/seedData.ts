@@ -24,7 +24,7 @@ function toText(item: SeedItem): string {
   if (item.note) parts.push(item.note);
   const suffix = parts.length ? ` (${parts.join("; ")})` : "";
   const flag = item.needsInput ? " ⚠️" : "";
-  return `[${item.group}] ${item.name}${suffix}${flag}`;
+  return `${item.name}${suffix}${flag}`;
 }
 
 export function buildTasksFromSeed(items: SeedItem[], prefix: string): Task[] {
