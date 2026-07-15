@@ -21,6 +21,7 @@ export default function TaskApp() {
   const [newTaskText, setNewTaskText] = useState<Record<string, string>>({});
   const [newTaskResponsible, setNewTaskResponsible] = useState<Record<string, string>>({});
   const [openAddForm, setOpenAddForm] = useState<Record<string, boolean>>({});
+  const [searchQuery, setSearchQuery] = useState("");
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -176,7 +177,7 @@ export default function TaskApp() {
           <li>
             <button
               onClick={() => setFilter(ALL_FILTER)}
-              className={`flex items-center gap-2 whitespace-nowrap rounded-full border px-2.5 py-1.5 text-left font-heading text-xs font-medium transition-colors sm:w-full sm:px-3 sm:py-2 sm:text-sm ${
+              className={`flex h-8 items-center gap-2 whitespace-nowrap rounded-full border px-2.5 text-left font-heading text-xs font-medium transition-colors sm:h-9 sm:w-full sm:px-3 sm:text-sm ${
                 filter === ALL_FILTER
                   ? "border-accent bg-accent text-white"
                   : "border-line text-foreground hover:bg-accent-light"
@@ -192,7 +193,7 @@ export default function TaskApp() {
               <li key={section.id}>
                 <button
                   onClick={() => setFilter(section.id)}
-                  className={`flex items-center justify-between gap-2 whitespace-nowrap rounded-full border px-2.5 py-1.5 text-left font-heading text-xs font-medium transition-colors sm:w-full sm:px-3 sm:py-2 sm:text-sm ${
+                  className={`flex h-8 items-center justify-between gap-2 whitespace-nowrap rounded-full border px-2.5 text-left font-heading text-xs font-medium transition-colors sm:h-9 sm:w-full sm:px-3 sm:text-sm ${
                     isActive
                       ? "border-accent bg-accent text-white"
                       : "border-line text-foreground hover:bg-accent-light"
@@ -224,12 +225,26 @@ export default function TaskApp() {
           </div>
         )}
 
+        <input
+          type="search"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search tasks or responsible…"
+          className="mb-6 w-full rounded-md border border-line bg-card px-3 py-2 text-sm outline-none focus:border-accent sm:max-w-xs"
+        />
+
         <div className="flex flex-col gap-8">
           {visibleSections.map((section) => {
             const isFormOpen = Boolean(openAddForm[section.id]);
-            const visibleTasks = hideDone
-              ? section.tasks.filter((t) => !t.done)
-              : section.tasks;
+            const query = searchQuery.trim().toLowerCase();
+            const visibleTasks = section.tasks.filter((t) => {
+              if (hideDone && t.done) return false;
+              if (!query) return true;
+              return (
+                t.text.toLowerCase().includes(query) ||
+                (t.responsible ?? "").toLowerCase().includes(query)
+              );
+            });
             return (
               <section
                 key={section.id}
@@ -276,6 +291,8 @@ export default function TaskApp() {
                     <li className="text-sm text-muted">
                       {section.tasks.length === 0
                         ? "No tasks yet."
+                        : query
+                        ? "No matching tasks."
                         : "All done — finished tasks are hidden."}
                     </li>
                   )}
@@ -291,7 +308,8 @@ export default function TaskApp() {
                         className="h-4 w-4 shrink-0 accent-ok"
                       />
                       <span
-                        className={`min-w-0 flex-1 font-heading text-sm font-medium ${
+                        onClick={() => toggleTask(section.id, task.id)}
+                        className={`min-w-0 flex-1 cursor-pointer select-none font-heading text-sm font-medium ${
                           task.done ? "text-muted line-through" : "text-foreground"
                         }`}
                       >
@@ -305,10 +323,14 @@ export default function TaskApp() {
                         </span>
                       )}
                       <button
-                        onClick={() => deleteTask(section.id, task.id)}
+                        onClick={() => {
+                          if (window.confirm(`Delete task "${task.text}"?`)) {
+                            deleteTask(section.id, task.id);
+                          }
+                        }}
                         aria-label={`Delete task ${task.text}`}
                         title="Delete task"
-                        className="shrink-0 rounded p-1 text-muted opacity-0 hover:bg-warn-bg hover:text-warn group-hover:opacity-100"
+                        className="shrink-0 rounded p-1 text-muted hover:bg-warn-bg hover:text-warn"
                       >
                         ✕
                       </button>
