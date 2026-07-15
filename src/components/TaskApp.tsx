@@ -241,16 +241,18 @@ export default function TaskApp() {
           {visibleSections.map((section) => {
             const isFormOpen = Boolean(openAddForm[section.id]);
             const query = searchQuery.trim().toLowerCase();
-            const visibleTasks = section.tasks.filter((t) => {
-              if (hideDone && t.done) return false;
-              if (!query) return true;
-              return (
-                t.text.toLowerCase().includes(query) ||
-                (t.responsible ?? "").toLowerCase().includes(query) ||
-                (t.note ?? "").toLowerCase().includes(query) ||
-                (t.group ?? "").toLowerCase().includes(query)
-              );
-            });
+            const visibleTasks = section.tasks
+              .filter((t) => {
+                if (hideDone && t.done) return false;
+                if (!query) return true;
+                return (
+                  t.text.toLowerCase().includes(query) ||
+                  (t.responsible ?? "").toLowerCase().includes(query) ||
+                  (t.note ?? "").toLowerCase().includes(query) ||
+                  (t.group ?? "").toLowerCase().includes(query)
+                );
+              })
+              .sort((a, b) => Number(a.done) - Number(b.done));
             return (
               <section
                 key={section.id}
@@ -324,11 +326,8 @@ export default function TaskApp() {
                         >
                           {task.text}
                         </div>
-                        {task.note && (
-                          <div className="mt-0.5 text-xs text-muted">{task.note}</div>
-                        )}
                       </div>
-                      {(task.group || task.responsible) && (
+                      {!task.done && (task.group || task.responsible) && (
                         <span className="order-last ml-7 flex w-full flex-wrap gap-1 sm:ml-0 sm:contents">
                           {task.group && (
                             <span className="inline-block rounded-full border border-line px-2 py-0.5 text-xs font-medium text-muted">
@@ -350,18 +349,20 @@ export default function TaskApp() {
                               ))}
                         </span>
                       )}
-                      <button
-                        onClick={() => {
-                          if (window.confirm(`Delete task "${task.text}"?`)) {
-                            deleteTask(section.id, task.id);
-                          }
-                        }}
-                        aria-label={`Delete task ${task.text}`}
-                        title="Delete task"
-                        className="shrink-0 rounded p-1 text-muted hover:bg-warn-bg hover:text-warn"
-                      >
-                        ✕
-                      </button>
+                      {task.done && (
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`Delete task "${task.text}"?`)) {
+                              deleteTask(section.id, task.id);
+                            }
+                          }}
+                          aria-label={`Delete task ${task.text}`}
+                          title="Delete task"
+                          className="shrink-0 rounded p-1 text-muted hover:bg-warn-bg hover:text-warn"
+                        >
+                          ✕
+                        </button>
+                      )}
                     </li>
                   ))}
                 </ul>
