@@ -3,6 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Section, TaskState } from "@/lib/types";
 
+const ALL_FILTER = "all" as const;
+type SectionFilter = string | typeof ALL_FILTER;
+
 function createId(): string {
   return typeof crypto !== "undefined" && "randomUUID" in crypto
     ? crypto.randomUUID()
@@ -11,12 +14,11 @@ function createId(): string {
 
 export default function TaskApp() {
   const [state, setState] = useState<TaskState | null>(null);
-  const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<SectionFilter>(ALL_FILTER);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [newTaskText, setNewTaskText] = useState("");
-  const [newSectionName, setNewSectionName] = useState("");
-  const [showAddSection, setShowAddSection] = useState(false);
+  const [newTaskText, setNewTaskText] = useState<Record<string, string>>({});
+  const [newTaskResponsible, setNewTaskResponsible] = useState<Record<string, string>>({});
 
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -30,7 +32,6 @@ export default function TaskApp() {
       .then((data: TaskState) => {
         if (cancelled) return;
         setState(data);
-        setActiveSectionId(data.sections[0]?.id ?? null);
         setLoading(false);
       })
       .catch(() => {
@@ -69,35 +70,30 @@ export default function TaskApp() {
     [persist]
   );
 
-  function addSection() {
-    const name = newSectionName.trim();
-    if (!name) return;
-    const id = createId();
-    updateSections((sections) => [...sections, { id, name, tasks: [] }]);
-    setNewSectionName("");
-    setShowAddSection(false);
-    setActiveSectionId(id);
-  }
-
-  function deleteSection(sectionId: string) {
-    updateSections((sections) => sections.filter((s) => s.id !== sectionId));
-    if (activeSectionId === sectionId) {
-      const remaining = state?.sections.filter((s) => s.id !== sectionId) ?? [];
-      setActiveSectionId(remaining[0]?.id ?? null);
-    }
-  }
-
-  function addTask() {
-    const text = newTaskText.trim();
-    if (!text || !activeSectionId) return;
+  function addTask(sectionId: string) {
+    const text = (newTaskText[sectionId] ?? "").trim();
+    if (!text) return;
+    const responsible = (newTaskResponsible[sectionId] ?? "").trim();
     updateSections((sections) =>
       sections.map((s) =>
-        s.id === activeSectionId
-          ? { ...s, tasks: [...s.tasks, { id: createId(), text, done: false }] }
+        s.id === sectionId
+          ? {
+              ...s,
+              tasks: [
+                ...s.tasks,
+                {
+                  id: createId(),
+                  text,
+                  done: false,
+                  ...(responsible ? { responsible } : {}),
+                },
+              ],
+            }
           : s
       )
     );
-    setNewTaskText("");
+    setNewTaskText((prev) => ({ ...prev, [sectionId]: "" }));
+    setNewTaskResponsible((prev) => ({ ...prev, [sectionId]: "" }));
   }
 
   function toggleTask(sectionId: string, taskId: string) {
@@ -141,26 +137,41 @@ export default function TaskApp() {
     );
   }
 
-  const activeSection = state.sections.find((s) => s.id === activeSectionId) ?? null;
+  const visibleSections =
+    filter === ALL_FILTER
+      ? state.sections
+      : state.sections.filter((s) => s.id === filter);
 
   return (
     <div className="flex flex-1 flex-col sm:flex-row">
       <nav className="flex flex-col gap-1 border-b border-zinc-200 p-4 sm:w-56 sm:border-b-0 sm:border-r">
         <ul className="flex flex-row gap-1 overflow-x-auto sm:flex-col sm:overflow-visible">
+          <li>
+            <button
+              onClick={() => setFilter(ALL_FILTER)}
+              className={`flex w-full items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 text-left text-sm font-medium transition-colors ${
+                filter === ALL_FILTER
+                  ? "bg-zinc-900 text-white"
+                  : "text-zinc-700 hover:bg-zinc-100"
+              }`}
+            >
+              All
+            </button>
+          </li>
           {state.sections.map((section) => {
             const remaining = section.tasks.filter((t) => !t.done).length;
-            const isActive = section.id === activeSectionId;
+            const isActive = filter === section.id;
             return (
-              <li key={section.id} className="group flex items-center">
+              <li key={section.id}>
                 <button
-                  onClick={() => setActiveSectionId(section.id)}
-                  className={`flex w-full items-center justify-between gap-2 rounded-md px-3 py-2 text-left text-sm font-medium transition-colors ${
+                  onClick={() => setFilter(section.id)}
+                  className={`flex w-full items-center justify-between gap-2 whitespace-nowrap rounded-md px-3 py-2 text-left text-sm font-medium transition-colors ${
                     isActive
                       ? "bg-zinc-900 text-white"
                       : "text-zinc-700 hover:bg-zinc-100"
                   }`}
                 >
-                  <span className="whitespace-nowrap">{section.name}</span>
+                  <span>{section.name}</span>
                   {remaining > 0 && (
                     <span
                       className={`ml-2 rounded-full px-1.5 py-0.5 text-xs ${
@@ -173,53 +184,10 @@ export default function TaskApp() {
                     </span>
                   )}
                 </button>
-                <button
-                  onClick={() => deleteSection(section.id)}
-                  aria-label={`Delete section ${section.name}`}
-                  title="Delete section"
-                  className="ml-1 hidden shrink-0 rounded p-1 text-zinc-400 hover:bg-red-50 hover:text-red-600 group-hover:block"
-                >
-                  ✕
-                </button>
               </li>
             );
           })}
         </ul>
-
-        {showAddSection ? (
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              addSection();
-            }}
-            className="mt-2 flex gap-1"
-          >
-            <input
-              autoFocus
-              value={newSectionName}
-              onChange={(e) => setNewSectionName(e.target.value)}
-              onBlur={() => {
-                if (!newSectionName.trim()) setShowAddSection(false);
-              }}
-              placeholder="Section name"
-              maxLength={100}
-              className="min-w-0 flex-1 rounded-md border border-zinc-300 px-2 py-1 text-sm outline-none focus:border-zinc-500"
-            />
-            <button
-              type="submit"
-              className="rounded-md bg-zinc-900 px-2 py-1 text-sm text-white"
-            >
-              Add
-            </button>
-          </form>
-        ) : (
-          <button
-            onClick={() => setShowAddSection(true)}
-            className="mt-2 rounded-md px-3 py-2 text-left text-sm text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700"
-          >
-            + Add section
-          </button>
-        )}
       </nav>
 
       <main className="flex-1 p-6">
@@ -229,71 +197,90 @@ export default function TaskApp() {
           </div>
         )}
 
-        {!activeSection ? (
-          <p className="text-zinc-500">No sections yet. Add one to get started.</p>
-        ) : (
-          <>
-            <h1 className="mb-4 text-xl font-semibold text-zinc-900">
-              {activeSection.name}
-            </h1>
+        <div className="flex flex-col gap-8">
+          {visibleSections.map((section) => (
+            <section key={section.id}>
+              <h1 className="mb-4 text-xl font-semibold text-zinc-900">
+                {section.name}
+              </h1>
 
-            <ul className="mb-4 flex flex-col gap-1">
-              {activeSection.tasks.length === 0 && (
-                <li className="text-sm text-zinc-500">No tasks yet.</li>
-              )}
-              {activeSection.tasks.map((task) => (
-                <li
-                  key={task.id}
-                  className="group flex items-center gap-3 rounded-md px-2 py-2 hover:bg-zinc-50"
-                >
-                  <input
-                    type="checkbox"
-                    checked={task.done}
-                    onChange={() => toggleTask(activeSection.id, task.id)}
-                    className="h-4 w-4 shrink-0 accent-zinc-900"
-                  />
-                  <span
-                    className={`flex-1 text-sm ${
-                      task.done ? "text-zinc-400 line-through" : "text-zinc-800"
-                    }`}
+              <ul className="mb-4 flex flex-col gap-1">
+                {section.tasks.length === 0 && (
+                  <li className="text-sm text-zinc-500">No tasks yet.</li>
+                )}
+                {section.tasks.map((task) => (
+                  <li
+                    key={task.id}
+                    className="group flex items-center gap-3 rounded-md px-2 py-2 hover:bg-zinc-50"
                   >
-                    {task.text}
-                  </span>
-                  <button
-                    onClick={() => deleteTask(activeSection.id, task.id)}
-                    aria-label={`Delete task ${task.text}`}
-                    title="Delete task"
-                    className="shrink-0 rounded p-1 text-zinc-400 opacity-0 hover:bg-red-50 hover:text-red-600 group-hover:opacity-100"
-                  >
-                    ✕
-                  </button>
-                </li>
-              ))}
-            </ul>
+                    <input
+                      type="checkbox"
+                      checked={task.done}
+                      onChange={() => toggleTask(section.id, task.id)}
+                      className="h-4 w-4 shrink-0 accent-zinc-900"
+                    />
+                    <span
+                      className={`flex-1 text-sm ${
+                        task.done ? "text-zinc-400 line-through" : "text-zinc-800"
+                      }`}
+                    >
+                      {task.text}
+                    </span>
+                    {task.responsible && (
+                      <span className="shrink-0 rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">
+                        {task.responsible}
+                      </span>
+                    )}
+                    <button
+                      onClick={() => deleteTask(section.id, task.id)}
+                      aria-label={`Delete task ${task.text}`}
+                      title="Delete task"
+                      className="shrink-0 rounded p-1 text-zinc-400 opacity-0 hover:bg-red-50 hover:text-red-600 group-hover:opacity-100"
+                    >
+                      ✕
+                    </button>
+                  </li>
+                ))}
+              </ul>
 
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                addTask();
-              }}
-              className="flex gap-2"
-            >
-              <input
-                value={newTaskText}
-                onChange={(e) => setNewTaskText(e.target.value)}
-                placeholder="Add a task…"
-                maxLength={500}
-                className="min-w-0 flex-1 rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500"
-              />
-              <button
-                type="submit"
-                className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  addTask(section.id);
+                }}
+                className="flex flex-wrap gap-2"
               >
-                Add
-              </button>
-            </form>
-          </>
-        )}
+                <input
+                  value={newTaskText[section.id] ?? ""}
+                  onChange={(e) =>
+                    setNewTaskText((prev) => ({ ...prev, [section.id]: e.target.value }))
+                  }
+                  placeholder="Add a task…"
+                  maxLength={500}
+                  className="min-w-0 flex-1 rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500"
+                />
+                <input
+                  value={newTaskResponsible[section.id] ?? ""}
+                  onChange={(e) =>
+                    setNewTaskResponsible((prev) => ({
+                      ...prev,
+                      [section.id]: e.target.value,
+                    }))
+                  }
+                  placeholder="Responsible (optional)"
+                  maxLength={100}
+                  className="w-40 min-w-0 rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500"
+                />
+                <button
+                  type="submit"
+                  className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
+                >
+                  Add
+                </button>
+              </form>
+            </section>
+          ))}
+        </div>
       </main>
     </div>
   );

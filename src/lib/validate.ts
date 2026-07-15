@@ -5,6 +5,7 @@ const MAX_TASKS_PER_SECTION = 500;
 const MAX_TEXT_LENGTH = 500;
 const MAX_NAME_LENGTH = 100;
 const MAX_ID_LENGTH = 100;
+const MAX_RESPONSIBLE_LENGTH = 100;
 
 function isNonEmptyShortString(value: unknown, maxLength: number): value is string {
   return (
@@ -20,7 +21,10 @@ function isValidTask(value: unknown): value is Task {
     typeof task.text === "string" &&
     task.text.length > 0 &&
     task.text.length <= MAX_TEXT_LENGTH &&
-    typeof task.done === "boolean"
+    typeof task.done === "boolean" &&
+    (task.responsible === undefined ||
+      (typeof task.responsible === "string" &&
+        task.responsible.length <= MAX_RESPONSIBLE_LENGTH))
   );
 }
 

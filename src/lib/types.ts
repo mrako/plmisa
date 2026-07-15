@@ -2,6 +2,7 @@ export type Task = {
   id: string;
   text: string;
   done: boolean;
+  responsible?: string;
 };
 
 export type Section = {

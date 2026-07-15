@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Tasks",
-  description: "A simple shared task list",
+  title: "Pekka + Liina 90v — Tehtävälista",
+  description: "Jaettu tehtävälista Pekka + Liina 90v -juhlille",
 };
 
 export default function RootLayout({
