@@ -4,6 +4,7 @@ export type Task = {
   done: boolean;
   responsible?: string;
   note?: string;
+  group?: string;
 };
 
 export type Section = {

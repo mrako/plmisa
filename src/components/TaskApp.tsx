@@ -20,6 +20,7 @@ export default function TaskApp() {
   const [error, setError] = useState<string | null>(null);
   const [newTaskText, setNewTaskText] = useState<Record<string, string>>({});
   const [newTaskResponsible, setNewTaskResponsible] = useState<Record<string, string>>({});
+  const [newTaskGroup, setNewTaskGroup] = useState<Record<string, string>>({});
   const [openAddForm, setOpenAddForm] = useState<Record<string, boolean>>({});
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -92,6 +93,7 @@ export default function TaskApp() {
     const text = (newTaskText[sectionId] ?? "").trim();
     if (!text) return;
     const responsible = (newTaskResponsible[sectionId] ?? "").trim();
+    const group = (newTaskGroup[sectionId] ?? "").trim();
     updateSections((sections) =>
       sections.map((s) =>
         s.id === sectionId
@@ -104,6 +106,7 @@ export default function TaskApp() {
                   text,
                   done: false,
                   ...(responsible ? { responsible } : {}),
+                  ...(group ? { group } : {}),
                 },
               ],
             }
@@ -112,6 +115,7 @@ export default function TaskApp() {
     );
     setNewTaskText((prev) => ({ ...prev, [sectionId]: "" }));
     setNewTaskResponsible((prev) => ({ ...prev, [sectionId]: "" }));
+    setNewTaskGroup((prev) => ({ ...prev, [sectionId]: "" }));
   }
 
   function toggleTask(sectionId: string, taskId: string) {
@@ -243,7 +247,8 @@ export default function TaskApp() {
               return (
                 t.text.toLowerCase().includes(query) ||
                 (t.responsible ?? "").toLowerCase().includes(query) ||
-                (t.note ?? "").toLowerCase().includes(query)
+                (t.note ?? "").toLowerCase().includes(query) ||
+                (t.group ?? "").toLowerCase().includes(query)
               );
             });
             return (
@@ -323,20 +328,26 @@ export default function TaskApp() {
                           <div className="mt-0.5 text-xs text-muted">{task.note}</div>
                         )}
                       </div>
-                      {task.responsible && (
+                      {(task.group || task.responsible) && (
                         <span className="order-last ml-7 flex w-full flex-wrap gap-1 sm:ml-0 sm:contents">
-                          {task.responsible
-                            .split(",")
-                            .map((name) => name.trim())
-                            .filter(Boolean)
-                            .map((name) => (
-                              <span
-                                key={name}
-                                className="inline-block rounded-full bg-accent-light px-2 py-0.5 text-xs font-medium text-accent"
-                              >
-                                {name}
-                              </span>
-                            ))}
+                          {task.group && (
+                            <span className="inline-block rounded-full border border-line px-2 py-0.5 text-xs font-medium text-muted">
+                              {task.group}
+                            </span>
+                          )}
+                          {task.responsible &&
+                            task.responsible
+                              .split(",")
+                              .map((name) => name.trim())
+                              .filter(Boolean)
+                              .map((name) => (
+                                <span
+                                  key={name}
+                                  className="inline-block rounded-full bg-accent-light px-2 py-0.5 text-xs font-medium text-accent"
+                                >
+                                  {name}
+                                </span>
+                              ))}
                         </span>
                       )}
                       <button
@@ -375,6 +386,18 @@ export default function TaskApp() {
                     />
                     <div className="flex gap-2">
                       <input
+                        value={newTaskGroup[section.id] ?? ""}
+                        onChange={(e) =>
+                          setNewTaskGroup((prev) => ({
+                            ...prev,
+                            [section.id]: e.target.value,
+                          }))
+                        }
+                        placeholder="Group"
+                        maxLength={100}
+                        className="w-28 min-w-0 flex-1 rounded-md border border-line px-2.5 py-1.5 text-xs outline-none focus:border-accent sm:w-32 sm:flex-none sm:text-sm"
+                      />
+                      <input
                         value={newTaskResponsible[section.id] ?? ""}
                         onChange={(e) =>
                           setNewTaskResponsible((prev) => ({
@@ -384,7 +407,7 @@ export default function TaskApp() {
                         }
                         placeholder="Responsible"
                         maxLength={100}
-                        className="w-32 min-w-0 flex-1 rounded-md border border-line px-2.5 py-1.5 text-xs outline-none focus:border-accent sm:w-40 sm:flex-none sm:text-sm"
+                        className="w-28 min-w-0 flex-1 rounded-md border border-line px-2.5 py-1.5 text-xs outline-none focus:border-accent sm:w-40 sm:flex-none sm:text-sm"
                       />
                       <button
                         type="submit"
