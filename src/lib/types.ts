@@ -3,6 +3,7 @@ export type Task = {
   text: string;
   done: boolean;
   responsible?: string;
+  note?: string;
 };
 
 export type Section = {

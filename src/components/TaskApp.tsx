@@ -242,7 +242,8 @@ export default function TaskApp() {
               if (!query) return true;
               return (
                 t.text.toLowerCase().includes(query) ||
-                (t.responsible ?? "").toLowerCase().includes(query)
+                (t.responsible ?? "").toLowerCase().includes(query) ||
+                (t.note ?? "").toLowerCase().includes(query)
               );
             });
             return (
@@ -307,19 +308,35 @@ export default function TaskApp() {
                         onChange={() => toggleTask(section.id, task.id)}
                         className="h-4 w-4 shrink-0 accent-ok"
                       />
-                      <span
+                      <div
                         onClick={() => toggleTask(section.id, task.id)}
-                        className={`min-w-0 flex-1 cursor-pointer select-none font-heading text-sm font-medium ${
-                          task.done ? "text-muted line-through" : "text-foreground"
-                        }`}
+                        className="min-w-0 flex-1 cursor-pointer select-none"
                       >
-                        {task.text}
-                      </span>
+                        <div
+                          className={`font-heading text-sm font-medium ${
+                            task.done ? "text-muted line-through" : "text-foreground"
+                          }`}
+                        >
+                          {task.text}
+                        </div>
+                        {task.note && (
+                          <div className="mt-0.5 text-xs text-muted">{task.note}</div>
+                        )}
+                      </div>
                       {task.responsible && (
-                        <span className="order-last ml-7 block w-full sm:ml-0 sm:contents">
-                          <span className="inline-block rounded-full bg-accent-light px-2 py-0.5 text-xs font-medium text-accent">
-                            {task.responsible}
-                          </span>
+                        <span className="order-last ml-7 flex w-full flex-wrap gap-1 sm:ml-0 sm:contents">
+                          {task.responsible
+                            .split(",")
+                            .map((name) => name.trim())
+                            .filter(Boolean)
+                            .map((name) => (
+                              <span
+                                key={name}
+                                className="inline-block rounded-full bg-accent-light px-2 py-0.5 text-xs font-medium text-accent"
+                              >
+                                {name}
+                              </span>
+                            ))}
                         </span>
                       )}
                       <button
