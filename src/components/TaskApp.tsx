@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { Section, TaskState } from "@/lib/types";
 
 const ALL_FILTER = "all" as const;
@@ -19,6 +20,22 @@ export default function TaskApp() {
   const [error, setError] = useState<string | null>(null);
   const [newTaskText, setNewTaskText] = useState<Record<string, string>>({});
   const [newTaskResponsible, setNewTaskResponsible] = useState<Record<string, string>>({});
+  const [openAddForm, setOpenAddForm] = useState<Record<string, boolean>>({});
+
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const hideDone = searchParams.get("hideDone") === "1";
+
+  function toggleHideDone() {
+    const params = new URLSearchParams(searchParams.toString());
+    if (hideDone) {
+      params.delete("hideDone");
+    } else {
+      params.set("hideDone", "1");
+    }
+    const query = params.toString();
+    router.replace(query ? `?${query}` : "?", { scroll: false });
+  }
 
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -159,10 +176,10 @@ export default function TaskApp() {
           <li>
             <button
               onClick={() => setFilter(ALL_FILTER)}
-              className={`flex items-center gap-2 whitespace-nowrap rounded-full px-2.5 py-1.5 text-left text-xs font-medium transition-colors sm:w-full sm:px-3 sm:py-2 sm:text-sm ${
+              className={`flex items-center gap-2 whitespace-nowrap rounded-full border px-2.5 py-1.5 text-left font-heading text-xs font-medium transition-colors sm:w-full sm:px-3 sm:py-2 sm:text-sm ${
                 filter === ALL_FILTER
-                  ? "bg-accent text-white"
-                  : "text-foreground hover:bg-accent-light"
+                  ? "border-accent bg-accent text-white"
+                  : "border-line text-foreground hover:bg-accent-light"
               }`}
             >
               kaikki
@@ -175,10 +192,10 @@ export default function TaskApp() {
               <li key={section.id}>
                 <button
                   onClick={() => setFilter(section.id)}
-                  className={`flex items-center justify-between gap-2 whitespace-nowrap rounded-full px-2.5 py-1.5 text-left text-xs font-medium transition-colors sm:w-full sm:px-3 sm:py-2 sm:text-sm ${
+                  className={`flex items-center justify-between gap-2 whitespace-nowrap rounded-full border px-2.5 py-1.5 text-left font-heading text-xs font-medium transition-colors sm:w-full sm:px-3 sm:py-2 sm:text-sm ${
                     isActive
-                      ? "bg-accent text-white"
-                      : "text-foreground hover:bg-accent-light"
+                      ? "border-accent bg-accent text-white"
+                      : "border-line text-foreground hover:bg-accent-light"
                   }`}
                 >
                   <span>{section.name}</span>
@@ -208,96 +225,144 @@ export default function TaskApp() {
         )}
 
         <div className="flex flex-col gap-8">
-          {visibleSections.map((section) => (
-            <section
-              key={section.id}
-              className="rounded-2xl border border-line bg-card p-4 shadow-sm sm:p-6"
-            >
-              <h1 className="mb-4 font-heading text-2xl font-semibold text-accent">
-                {section.name}
-              </h1>
-
-              <ul className="mb-4 flex flex-col gap-1">
-                {section.tasks.length === 0 && (
-                  <li className="text-sm text-muted">No tasks yet.</li>
-                )}
-                {section.tasks.map((task) => (
-                  <li
-                    key={task.id}
-                    className="group flex items-center gap-3 rounded-md px-2 py-2 hover:bg-accent-light/40"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={task.done}
-                      onChange={() => toggleTask(section.id, task.id)}
-                      className="h-4 w-4 shrink-0 accent-ok"
-                    />
-                    <span
-                      className={`flex-1 text-sm ${
-                        task.done ? "text-muted line-through" : "text-foreground"
+          {visibleSections.map((section) => {
+            const isFormOpen = Boolean(openAddForm[section.id]);
+            const visibleTasks = hideDone
+              ? section.tasks.filter((t) => !t.done)
+              : section.tasks;
+            return (
+              <section
+                key={section.id}
+                className="rounded-2xl border border-line bg-card p-4 shadow-sm sm:p-6"
+              >
+                <div className="mb-4 flex items-center justify-between gap-2">
+                  <h1 className="font-heading text-2xl font-semibold text-accent">
+                    {section.name}
+                  </h1>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={toggleHideDone}
+                      aria-pressed={hideDone}
+                      aria-label={hideDone ? "Show finished tasks" : "Hide finished tasks"}
+                      title={hideDone ? "Show finished tasks" : "Hide finished tasks"}
+                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition-colors ${
+                        hideDone
+                          ? "border-accent bg-accent text-white"
+                          : "border-line text-muted hover:bg-accent-light hover:text-accent"
                       }`}
                     >
-                      {task.text}
-                    </span>
-                    {task.responsible && (
-                      <span className="shrink-0 rounded-full bg-accent-light px-2 py-0.5 text-xs font-medium text-accent">
-                        {task.responsible}
-                      </span>
-                    )}
-                    <button
-                      onClick={() => deleteTask(section.id, task.id)}
-                      aria-label={`Delete task ${task.text}`}
-                      title="Delete task"
-                      className="shrink-0 rounded p-1 text-muted opacity-0 hover:bg-warn-bg hover:text-warn group-hover:opacity-100"
-                    >
-                      ✕
+                      ✓
                     </button>
-                  </li>
-                ))}
-              </ul>
-
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  addTask(section.id);
-                }}
-                className="flex flex-col gap-2"
-              >
-                <input
-                  value={newTaskText[section.id] ?? ""}
-                  onChange={(e) =>
-                    setNewTaskText((prev) => ({ ...prev, [section.id]: e.target.value }))
-                  }
-                  placeholder="Add a task…"
-                  maxLength={500}
-                  className="min-w-0 w-full rounded-md border border-line px-2.5 py-1.5 text-sm outline-none focus:border-accent"
-                />
-                <div className="flex gap-2">
-                  <input
-                    value={newTaskResponsible[section.id] ?? ""}
-                    onChange={(e) =>
-                      setNewTaskResponsible((prev) => ({
-                        ...prev,
-                        [section.id]: e.target.value,
-                      }))
-                    }
-                    placeholder="Responsible"
-                    maxLength={100}
-                    className="w-32 min-w-0 flex-1 rounded-md border border-line px-2.5 py-1.5 text-xs outline-none focus:border-accent sm:w-40 sm:flex-none sm:text-sm"
-                  />
-                  <button
-                    type="submit"
-                    className="rounded-full bg-accent px-3 py-1.5 text-xs font-medium text-white hover:brightness-110 sm:text-sm"
-                  >
-                    Add
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setOpenAddForm((prev) => ({
+                          ...prev,
+                          [section.id]: !prev[section.id],
+                        }))
+                      }
+                      aria-label={isFormOpen ? "Hide add task form" : "Show add task form"}
+                      title={isFormOpen ? "Hide add task form" : "Add a task"}
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-line text-accent hover:bg-accent-light"
+                    >
+                      {isFormOpen ? "−" : "+"}
+                    </button>
+                  </div>
                 </div>
-              </form>
-            </section>
-          ))}
+
+                <ul className="mb-4 flex flex-col gap-1">
+                  {visibleTasks.length === 0 && (
+                    <li className="text-sm text-muted">
+                      {section.tasks.length === 0
+                        ? "No tasks yet."
+                        : "All done — finished tasks are hidden."}
+                    </li>
+                  )}
+                  {visibleTasks.map((task) => (
+                    <li
+                      key={task.id}
+                      className="group flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md px-2 py-2 hover:bg-accent-light/40"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={task.done}
+                        onChange={() => toggleTask(section.id, task.id)}
+                        className="h-4 w-4 shrink-0 accent-ok"
+                      />
+                      <span
+                        className={`min-w-0 flex-1 font-heading text-sm font-medium ${
+                          task.done ? "text-muted line-through" : "text-foreground"
+                        }`}
+                      >
+                        {task.text}
+                      </span>
+                      {task.responsible && (
+                        <span className="order-last ml-7 block w-full sm:ml-0 sm:contents">
+                          <span className="inline-block rounded-full bg-accent-light px-2 py-0.5 text-xs font-medium text-accent">
+                            {task.responsible}
+                          </span>
+                        </span>
+                      )}
+                      <button
+                        onClick={() => deleteTask(section.id, task.id)}
+                        aria-label={`Delete task ${task.text}`}
+                        title="Delete task"
+                        className="shrink-0 rounded p-1 text-muted opacity-0 hover:bg-warn-bg hover:text-warn group-hover:opacity-100"
+                      >
+                        ✕
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+
+                {isFormOpen && (
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      addTask(section.id);
+                    }}
+                    className="flex flex-col gap-2"
+                  >
+                    <input
+                      autoFocus
+                      value={newTaskText[section.id] ?? ""}
+                      onChange={(e) =>
+                        setNewTaskText((prev) => ({ ...prev, [section.id]: e.target.value }))
+                      }
+                      placeholder="Add a task…"
+                      maxLength={500}
+                      className="min-w-0 w-full rounded-md border border-line px-2.5 py-1.5 text-sm outline-none focus:border-accent"
+                    />
+                    <div className="flex gap-2">
+                      <input
+                        value={newTaskResponsible[section.id] ?? ""}
+                        onChange={(e) =>
+                          setNewTaskResponsible((prev) => ({
+                            ...prev,
+                            [section.id]: e.target.value,
+                          }))
+                        }
+                        placeholder="Responsible"
+                        maxLength={100}
+                        className="w-32 min-w-0 flex-1 rounded-md border border-line px-2.5 py-1.5 text-xs outline-none focus:border-accent sm:w-40 sm:flex-none sm:text-sm"
+                      />
+                      <button
+                        type="submit"
+                        className="rounded-full bg-accent px-3 py-1.5 text-xs font-medium text-white hover:brightness-110 sm:text-sm"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </section>
+            );
+          })}
         </div>
       </main>
       </div>
     </div>
   );
+
 }

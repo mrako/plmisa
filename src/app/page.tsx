@@ -1,5 +1,10 @@
+import { Suspense } from "react";
 import TaskApp from "@/components/TaskApp";
 
 export default function Home() {
-  return <TaskApp />;
+  return (
+    <Suspense>
+      <TaskApp />
+    </Suspense>
+  );
 }
