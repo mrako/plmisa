@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pekka + Liina 90v – Kesälahti 18.–19.7.</title>
+<style>
+  :root{
+    --bg:#faf6f0;
+    --card:#ffffff;
+    --ink:#2c2620;
+    --muted:#7a7168;
+    --line:#e6ddd0;
+    --accent:#8a5a3b;
+    --accent-light:#f1e3d3;
+    --ok:#4c7a4c;
+    --ok-bg:#e7f1e7;
+    --warn:#b5542b;
+    --warn-bg:#fbe9e1;
+    --radius:12px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    padding-bottom:60px;
+  }
+  header{
+    background:var(--accent);
+    color:#fff;
+    padding:22px 16px 18px;
+    text-align:center;
+  }
+  header h1{margin:0 0 4px; font-size:1.4rem;}
+  header p{margin:2px 0; font-size:.92rem; opacity:.95;}
+  .wrap{max-width:820px; margin:0 auto; padding:0 14px;}
+  .info-box{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:14px 16px;
+    margin:16px 0;
+    font-size:.92rem;
+  }
+  .info-box.diet{border-left:5px solid var(--warn);}
+  .info-box b{color:var(--accent);}
+  .tabs{
+    display:flex; gap:8px; margin:18px 0 8px; flex-wrap:wrap;
+    position:sticky; top:0; background:var(--bg); padding:10px 0; z-index:5;
+  }
+  .tab-btn{
+    flex:1; min-width:120px;
+    padding:10px 8px;
+    border:1px solid var(--line);
+    background:var(--card);
+    border-radius:10px;
+    font-size:.88rem;
+    cursor:pointer;
+    font-weight:600;
+    color:var(--ink);
+  }
+  .tab-btn.active{background:var(--accent); color:#fff; border-color:var(--accent);}
+  .progress-wrap{margin:6px 0 14px;}
+  .progress-bar{
+    height:8px; background:var(--line); border-radius:6px; overflow:hidden;
+  }
+  .progress-fill{height:100%; background:var(--ok); width:0%; transition:width .2s;}
+  .progress-label{font-size:.78rem; color:var(--muted); margin-top:4px;}
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+  .group{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    margin-bottom:14px;
+    overflow:hidden;
+  }
+  .group-title{
+    background:var(--accent-light);
+    padding:10px 14px;
+    font-weight:700;
+    font-size:.98rem;
+    color:var(--accent);
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .group-title span.count{font-size:.75rem; font-weight:500; color:var(--muted);}
+  .item{
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    padding:10px 14px;
+    border-top:1px solid var(--line);
+  }
+  .item.done{background:var(--ok-bg);}
+  .item input[type=checkbox]{
+    width:20px; height:20px; margin-top:2px; flex-shrink:0; accent-color:var(--ok);
+  }
+  .item-body{flex:1; min-width:0;}
+  .item-name{font-weight:600; font-size:.94rem;}
+  .item.done .item-name{text-decoration:line-through; color:var(--muted);}
+  .item-meta{display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:5px;}
+  .meta-field{display:flex; align-items:center; gap:4px; font-size:.8rem; color:var(--muted);}
+  .meta-field label{white-space:nowrap;}
+  .meta-field input[type=text]{
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:3px 6px;
+    font-size:.8rem;
+    background:#fffefb;
+    min-width:90px;
+  }
+  .meta-field input.needs-input{border-color:var(--warn); background:var(--warn-bg);}
+  .note{font-size:.78rem; color:var(--muted); margin-top:4px; font-style:italic;}
+  .tarkista-flag{
+    display:inline-block; font-size:.7rem; font-weight:700; color:var(--warn);
+    background:var(--warn-bg); padding:1px 6px; border-radius:4px; margin-left:6px;
+  }
+  textarea{
+    width:100%; min-height:140px; border:1px solid var(--line); border-radius:8px;
+    padding:10px; font-family:inherit; font-size:.9rem; resize:vertical;
+  }
+  .actions{display:flex; gap:8px; margin:10px 0 20px; flex-wrap:wrap;}
+  .btn{
+    padding:8px 14px; border-radius:8px; border:1px solid var(--line);
+    background:var(--card); font-size:.82rem; cursor:pointer; font-weight:600;
+  }
+  .btn.danger{color:var(--warn); border-color:var(--warn);}
+  footer{text-align:center; font-size:.75rem; color:var(--muted); margin-top:30px; padding:0 16px;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Pekka + Liina 90v 🎉</h1>
+  <p>Kesälahti, 18.–19.7.</p>
+  <p>La: n. 80 hlöä (lounas, päivällinen, yöpala) · Su brunssi: n. 70 hlöä</p>
+</header>
+
+<div class="wrap">
+
+  <div class="info-box diet">
+    <b>Erityisruokavaliot – huomioi ruoissa ja pakkausmerkinnöissä:</b><br>
+    5 vegaania · 1 ei kalaa · 1 maidoton/kananmunaton/soijaton/gluteeniton (tuo tarvittaessa omaa ruokaa) ·
+    2 gluteenitonta ja maidotonta (Liinan päivitys 6.7.)
+  </div>
+
+  <div class="info-box">
+    Tämä sivu tallentaa merkinnät automaattisesti <b>tähän selaimeen/laitteeseen</b> (localStorage).
+    Se ei siis synkronoi eri ihmisten välillä – jos moni täyttää listaa eri puhelimilla, kannattaa sopia
+    yksi "virallinen" laite/selain per lista, tai käydä yhdessä läpi ennen keikkaa.
+    Kentät joissa lukee <span class="tarkista-flag">TARKISTA</span> tai jotka ovat tyhjiä, puuttuvat vielä
+    alkuperäisestä muistiosta – täytä ne suoraan tähän, kun tiedätte vastauksen.
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="mise">✅ Mise-lista</button>
+    <button class="tab-btn" data-tab="raaka">🛒 Raaka-ainelista</button>
+    <button class="tab-btn" data-tab="budjetti">💶 Budjetti / muistiinpanot</button>
+  </div>
+
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-label" id="progressLabel"></div>
+  </div>
+
+  <!-- MISE TAB -->
+  <div class="tab-panel active" id="tab-mise"></div>
+
+  <!-- RAAKA-AINE TAB -->
+  <div class="tab-panel" id="tab-raaka"></div>
+
+  <!-- BUDJETTI TAB -->
+  <div class="tab-panel" id="tab-budjetti">
+    <div class="group">
+      <div class="group-title">Budjettiarvio &amp; vapaat muistiinpanot</div>
+      <div style="padding:14px;">
+        <textarea id="budjettiNotes" placeholder="Esim. arvioitu kokonaisbudjetti, kustannukset per erä, kuka maksaa mitäkin, kuitit..."></textarea>
+      </div>
+    </div>
+    <div class="group">
+      <div class="group-title">Muista!</div>
+      <div class="item"><input type="checkbox" data-id="muista1"><div class="item-body"><div class="item-name">Ladon sisätilaan noutopöytä + mahd. grilli</div></div></div>
+      <div class="item"><input type="checkbox" data-id="muista2"><div class="item-body"><div class="item-name">Yön nuotio / hiiligrilli</div></div></div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn danger" id="resetBtn">Nollaa tämän välilehden merkinnät</button>
+    <button class="btn" onclick="window.print()">Tulosta / PDF</button>
+  </div>
+
+  <footer>
+    Muokkaa listan sisältöä suoraan tiedoston yläosassa olevista MISE_DATA / RAAKA_DATA -taulukoista koodissa.<br>
+    Tehty Pekan ja Liinan 90-vuotisjuhlia varten.
+  </footer>
+</div>
+
+<script>
+/* =========================================================================
+   SISÄLTÖ — muokkaa näitä taulukoita kun tiedot täsmentyvät.
+   group   = ryhmän/aterian otsikko
+   name    = ruokalaji / tehtävä
+   resp    = vastuuhenkilö (tyhjä = ei vielä tiedossa)
+   amount  = määrä
+   note    = lisätieto / ajoitus
+   needsInput = true -> kenttä korostetaan "TARKISTA"-tyylillä
+   ========================================================================= */
+
+const MISE_DATA = [
+  // --- Yleiset valmistelut ---
+  {group:"Yleiset valmistelut", name:"Astiat päivälliselle", resp:"Purujärven Martat", amount:"", note:""},
+  {group:"Yleiset valmistelut", name:"Tarjoiluastiat + ottimet", resp:"", amount:"", note:"", needsInput:true},
+  {group:"Yleiset valmistelut", name:"Viinit (valinta ja tilaus)", resp:"", amount:"", note:"", needsInput:true},
+  {group:"Yleiset valmistelut", name:"Diman lennot", resp:"", amount:"", note:"", needsInput:true},
+  {group:"Yleiset valmistelut", name:"Gazpachon raaka-aineiden tilaus", resp:"Dima", amount:"", note:""},
+  {group:"Yleiset valmistelut", name:"Banh Mi -sämpylät (tilaus/leivonta)", resp:"", amount:"", note:"", needsInput:true},
+  {group:"Yleiset valmistelut", name:"Ruokatilaus Kesälahden K-kauppaan", resp:"", amount:"", note:"", needsInput:true},
+  {group:"Yleiset valmistelut", name:"Lisää Iida whatsapp-ryhmään", resp:"", amount:"", note:""},
+  {group:"Yleiset valmistelut", name:"Kahvin keitto ja säilytys", resp:"", amount:"", note:"Kesälahdella perkolaattori (n. 90 kuppia) + 2 x 3 l termaria"},
+  {group:"Yleiset valmistelut", name:"Jälkiruoka – kokonaissuunnitelma", resp:"", amount:"", note:""},
+  {group:"Yleiset valmistelut", name:"Jälkiruoan astiat", resp:"", amount:"", note:"", needsInput:true},
+  {group:"Yleiset valmistelut", name:"Sunnuntain tarkistus (mitä tarkoittaa – täsmennä)", resp:"", amount:"", note:"", needsInput:true},
+  {group:"Yleiset valmistelut", name:"Lounaan juoma", resp:"", amount:"", note:"", needsInput:true},
+  {group:"Yleiset valmistelut", name:"Focaccia – kuka vastaa: Iida vai Mari?", resp:"", amount:"", note:"", needsInput:true},
+
+  // --- Lauantai: Lounas 13-14.45 ---
+  {group:"La Lounas (13–14.45)", name:"Gazpacho", resp:"Dima", amount:"10–12 L", note:"10 l kattilat löytyy Kesälahdelta"},
+  {group:"La Lounas (13–14.45)", name:"Pico de Gallo (mansikka-tomaatti)", resp:"Marko, Laura, Iida?", amount:"2 L", note:"Valmistus samana aamuna"},
+  {group:"La Lounas (13–14.45)", name:"Tuore leipä (paahdetaan esim. grillillä)", resp:"", amount:"", note:"", needsInput:true},
+  {group:"La Lounas (13–14.45)", name:"Focaccia", resp:"Iida", amount:"3–4 kpl", note:"Valmistus edellisenä päivänä"},
+  {group:"La Lounas (13–14.45)", name:"\"Happolappu\" / keittiön tervehdyksen jakelu", resp:"", amount:"", note:"n. ¾ keikasta tehtynä"},
+
+  // --- Päivällinen: Sälä ---
+  {group:"La Päivällinen (17.30) – Sälä", name:"Boquerones", resp:"Marko", amount:"", note:"Laivurin valinnasta", needsInput:true},
+  {group:"La Päivällinen (17.30) – Sälä", name:"Skagen", resp:"Marko", amount:"2 L", note:"Valmistus la aamulla"},
+  {group:"La Päivällinen (17.30) – Sälä", name:"Oliivit", resp:"Marko", amount:"2 kg", note:"Rolling cheese"},
+  {group:"La Päivällinen (17.30) – Sälä", name:"Manchego", resp:"Marko", amount:"2 kg", note:"Rolling cheese"},
+  {group:"La Päivällinen (17.30) – Sälä", name:"Saaristolaisleipä", resp:"Mari", amount:"5–6 leipää (1 pala / hlö)", note:"Villa Mari"},
+  {group:"La Päivällinen (17.30) – Sälä", name:"Leikkeleet", resp:"Marko", amount:"max 2 kg", note:"Rolling cheese"},
+
+  // --- Päivällinen: Kasvit ---
+  {group:"La Päivällinen (17.30) – Kasvit", name:"Vihreä salaatti", resp:"", amount:"", note:"", needsInput:true},
+  {group:"La Päivällinen (17.30) – Kasvit", name:"Joku toinen salaatti", resp:"", amount:"", note:"", needsInput:true},
+  {group:"La Päivällinen (17.30) – Kasvit", name:"Versot", resp:"Marko", amount:"", note:"", needsInput:true},
+  {group:"La Päivällinen (17.30) – Kasvit", name:"Pikkelit (kurkut, punasipuli)", resp:"Iida", amount:"", note:"Tehdään pari päivää ennen", needsInput:true},
+  {group:"La Päivällinen (17.30) – Kasvit", name:"Jääretiisi", resp:"Marko", amount:"", note:"Sheivaus ja jää", needsInput:true},
+
+  // --- Päivällinen: Proteiini ---
+  {group:"La Päivällinen (17.30) – Proteiini", name:"Entrecote", resp:"", amount:"4–5 kg", note:"", needsInput:true},
+  {group:"La Päivällinen (17.30) – Proteiini", name:"Savulohi", resp:"", amount:"4–5 kg", note:"", needsInput:true},
+  {group:"La Päivällinen (17.30) – Proteiini", name:"Mukulaselleri", resp:"", amount:"1–2 kg", note:"", needsInput:true},
+  {group:"La Päivällinen (17.30) – Proteiini", name:"Marinoitu tofu", resp:"", amount:"1 kg", note:"", needsInput:true},
+
+  // --- Jälkiruoka ---
+  {group:"La Jälkiruoka", name:"Flan", resp:"Dima", amount:"", note:"", needsInput:true},
+  {group:"La Jälkiruoka", name:"Mansikat", resp:"Liina", amount:"5 x 40 l laatikkoa", note:"Haku pe aamupäivällä"},
+  {group:"La Jälkiruoka", name:"Keksit", resp:"Iiris", amount:"120 kpl", note:"", needsInput:true},
+  {group:"La Jälkiruoka", name:"Kahvi / Tee", resp:"Marko", amount:"12–16 L", note:""},
+  {group:"La Jälkiruoka", name:"Karkkinurkka", resp:"Liina", amount:"", note:"Muista kulhot!", needsInput:true},
+
+  // --- Yöpala ---
+  {group:"La Yöpala (n. 21.30)", name:"Banh Mi -leivät", resp:"", amount:"", note:"", needsInput:true},
+  {group:"La Yöpala (n. 21.30)", name:"Gluteeniton banh mi", resp:"", amount:"", note:"", needsInput:true},
+  {group:"La Yöpala (n. 21.30)", name:"Pikkelit (kurkku, punasipuli)", resp:"Iida", amount:"", note:"Tehdään pari päivää ennen", needsInput:true},
+  {group:"La Yöpala (n. 21.30)", name:"Possunkylki", resp:"", amount:"", note:"", needsInput:true},
+
+  // --- Brunssi ---
+  {group:"Su Brunssi (11–>)", name:"Puuro", resp:"", amount:"", note:"", needsInput:true},
+  {group:"Su Brunssi (11–>)", name:"Karjalanpiirakat", resp:"Liina (tilannut)", amount:"150 kpl laktoositonta + 20 maidotonta/gluteenitonta", note:"Erkki hakee su-aamuna klo 10"},
+  {group:"Su Brunssi (11–>)", name:"Munavoi", resp:"", amount:"", note:"Tehdään paikan päällä", needsInput:true},
+  {group:"Su Brunssi (11–>)", name:"Kananmunat", resp:"", amount:"", note:"", needsInput:true},
+  {group:"Su Brunssi (11–>)", name:"Hapanjuurileipä", resp:"", amount:"", note:"", needsInput:true},
+  {group:"Su Brunssi (11–>)", name:"Kinkku", resp:"", amount:"", note:"", needsInput:true},
+  {group:"Su Brunssi (11–>)", name:"Joku juusto", resp:"", amount:"", note:"", needsInput:true},
+  {group:"Su Brunssi (11–>)", name:"Kasvikset", resp:"", amount:"", note:"", needsInput:true},
+  {group:"Su Brunssi (11–>)", name:"Tuoremehut", resp:"", amount:"", note:"", needsInput:true},
+  {group:"Su Brunssi (11–>)", name:"Kahvi", resp:"", amount:"", note:"", needsInput:true},
+  {group:"Su Brunssi (11–>)", name:"Tee", resp:"", amount:"", note:"", needsInput:true},
+  {group:"Su Brunssi (11–>)", name:"Graavilohi", resp:"", amount:"", note:"Edellisen päivän rippeet — ei uutta ostosta"},
+
+  // --- Juomat ---
+  {group:"Juomat", name:"Viini 1", resp:"", amount:"", note:"", needsInput:true},
+  {group:"Juomat", name:"Viini 2", resp:"", amount:"", note:"", needsInput:true},
+  {group:"Juomat", name:"Viini 3", resp:"", amount:"", note:"", needsInput:true},
+  {group:"Juomat", name:"Mehu 1", resp:"", amount:"", note:"", needsInput:true},
+  {group:"Juomat", name:"Mehu 2", resp:"", amount:"", note:"", needsInput:true},
+  {group:"Juomat", name:"Malmgård-olut", resp:"Pekka", amount:"2 kegiä", note:"Oluthana: helppo (surf ale) + vaikea (kausimakku), tai vain helppo"},
+];
+
+const RAAKA_DATA = [
+  {group:"Gazpacho (Dima) – tavoite 10–12 L", name:"Tomaatteja (kypsiä)", resp:"", amount:"arvio, säädä maun mukaan", note:"Perusaine, muodostaa suurimman osan nesteestä"},
+  {group:"Gazpacho (Dima) – tavoite 10–12 L", name:"Kurkkuja", resp:"", amount:"arvio", note:""},
+  {group:"Gazpacho (Dima) – tavoite 10–12 L", name:"Paprikoita (punainen/keltainen)", resp:"", amount:"arvio", note:""},
+  {group:"Gazpacho (Dima) – tavoite 10–12 L", name:"Punasipulia tai keltasipulia", resp:"", amount:"arvio", note:""},
+  {group:"Gazpacho (Dima) – tavoite 10–12 L", name:"Valkosipulia", resp:"", amount:"arvio", note:""},
+  {group:"Gazpacho (Dima) – tavoite 10–12 L", name:"Oliiviöljyä", resp:"", amount:"arvio", note:""},
+  {group:"Gazpacho (Dima) – tavoite 10–12 L", name:"Viinietikkaa (puna- tai valkoviini-)", resp:"", amount:"arvio", note:""},
+  {group:"Gazpacho (Dima) – tavoite 10–12 L", name:"Vaaleaa leipää (paksuuttamiseen)", resp:"", amount:"arvio", note:"Jätetään pois gluteenittomasta erästä (2+1 gluteenitonta vierasta)", needsInput:true},
+  {group:"Gazpacho (Dima) – tavoite 10–12 L", name:"Suolaa, sokeria, mustapippuria", resp:"", amount:"", note:""},
+
+  {group:"Pico de Gallo, mansikka-tomaatti – tavoite 2 L", name:"Tomaatteja", resp:"", amount:"", note:""},
+  {group:"Pico de Gallo, mansikka-tomaatti – tavoite 2 L", name:"Mansikoita", resp:"", amount:"", note:""},
+  {group:"Pico de Gallo, mansikka-tomaatti – tavoite 2 L", name:"Punasipulia", resp:"", amount:"", note:""},
+  {group:"Pico de Gallo, mansikka-tomaatti – tavoite 2 L", name:"Tuoretta chiliä / jalapeñoa", resp:"", amount:"", note:""},
+  {group:"Pico de Gallo, mansikka-tomaatti – tavoite 2 L", name:"Limettejä", resp:"", amount:"", note:""},
+  {group:"Pico de Gallo, mansikka-tomaatti – tavoite 2 L", name:"Tuoretta korianteria (tai persiljaa)", resp:"", amount:"", note:"Osalle korianteri maistuu saippualta – harkitse osa persiljalla"},
+  {group:"Pico de Gallo, mansikka-tomaatti – tavoite 2 L", name:"Suolaa", resp:"", amount:"", note:""},
+
+  {group:"Focaccia (3–4 kpl)", name:"Vehnäjauhoja", resp:"", amount:"", note:""},
+  {group:"Focaccia (3–4 kpl)", name:"Hiivaa", resp:"", amount:"", note:""},
+  {group:"Focaccia (3–4 kpl)", name:"Oliiviöljyä", resp:"", amount:"", note:""},
+  {group:"Focaccia (3–4 kpl)", name:"Merisuolaa", resp:"", amount:"", note:""},
+  {group:"Focaccia (3–4 kpl)", name:"Rosmariinia / muita tuoreita yrttejä", resp:"", amount:"", note:""},
+
+  {group:"Skagen – tavoite 2 L", name:"Katkarapuja (kuorittuja, kypsiä)", resp:"", amount:"", note:""},
+  {group:"Skagen – tavoite 2 L", name:"Majoneesia", resp:"", amount:"", note:""},
+  {group:"Skagen – tavoite 2 L", name:"Ranskankermaa tai kermaviiliä", resp:"", amount:"", note:"Osa laktoosittomana (2 vierasta)", needsInput:true},
+  {group:"Skagen – tavoite 2 L", name:"Sitruunoita", resp:"", amount:"", note:""},
+  {group:"Skagen – tavoite 2 L", name:"Punasipulia", resp:"", amount:"", note:""},
+  {group:"Skagen – tavoite 2 L", name:"Tuoretta tilliä", resp:"", amount:"", note:""},
+  {group:"Skagen – tavoite 2 L", name:"Suolaa, mustapippuria", resp:"", amount:"", note:""},
+
+  {group:"Sälä – valmiit ostotuotteet", name:"Boquerones (marinoidut sardellit)", resp:"", amount:"TARKISTA", note:"Ostetaan valmiina, Laivurin valikoimasta", needsInput:true},
+  {group:"Sälä – valmiit ostotuotteet", name:"Oliivit", resp:"", amount:"2 kg", note:""},
+  {group:"Sälä – valmiit ostotuotteet", name:"Manchego-juusto", resp:"", amount:"2 kg", note:""},
+  {group:"Sälä – valmiit ostotuotteet", name:"Leikkeleet", resp:"", amount:"max 2 kg", note:""},
+  {group:"Sälä – valmiit ostotuotteet", name:"Saaristolaisleipä", resp:"", amount:"5–6 leipää", note:"Villa Mari"},
+
+  {group:"Kasvit / salaatit", name:"Vihreän salaatin ainekset", resp:"", amount:"", note:"Resepti puuttuu kokonaan", needsInput:true},
+  {group:"Kasvit / salaatit", name:"Toisen salaatin ainekset", resp:"", amount:"", note:"Resepti puuttuu kokonaan", needsInput:true},
+  {group:"Kasvit / salaatit", name:"Versot", resp:"", amount:"", note:"", needsInput:true},
+  {group:"Kasvit / salaatit", name:"Kurkkuja (pikkeliin)", resp:"", amount:"", note:""},
+  {group:"Kasvit / salaatit", name:"Punasipulia (pikkeliin)", resp:"", amount:"", note:""},
+  {group:"Kasvit / salaatit", name:"Viinietikkaa, sokeria, suolaa (pikkeliliemi)", resp:"", amount:"", note:""},
+  {group:"Kasvit / salaatit", name:"Retiisejä (jääretiisi)", resp:"", amount:"", note:""},
+
+  {group:"Proteiinit (päivällinen)", name:"Entrecote", resp:"", amount:"4–5 kg", note:""},
+  {group:"Proteiinit (päivällinen)", name:"Savulohi", resp:"", amount:"4–5 kg", note:""},
+  {group:"Proteiinit (päivällinen)", name:"Mukulaselleri", resp:"", amount:"1–2 kg", note:""},
+  {group:"Proteiinit (päivällinen)", name:"Marinoitu tofu", resp:"", amount:"1 kg", note:"Valmis tuote tai marinoidaan itse – TARKISTA", needsInput:true},
+
+  {group:"Jälkiruoka", name:"Kananmunia (flan)", resp:"", amount:"", note:"", needsInput:true},
+  {group:"Jälkiruoka", name:"Maitoa / kermaa (flan)", resp:"", amount:"", note:"Huomioi 2+1 maidotonta vierasta – tarvitaan maidoton versio tai vaihtoehto", needsInput:true},
+  {group:"Jälkiruoka", name:"Sokeria (flan + karamelli)", resp:"", amount:"", note:""},
+  {group:"Jälkiruoka", name:"Vaniljaa", resp:"", amount:"", note:""},
+  {group:"Jälkiruoka", name:"Mansikoita", resp:"", amount:"5 x 40 l laatikkoa", note:"Haetaan pe aamupäivällä"},
+  {group:"Jälkiruoka", name:"Keksit", resp:"", amount:"120 kpl", note:"Ostetaan vai leivotaan?", needsInput:true},
+  {group:"Jälkiruoka", name:"Kahvia (suodatin)", resp:"", amount:"", note:"12–16 L tarve, perkolaattori n. 90 kupille", needsInput:true},
+  {group:"Jälkiruoka", name:"Teetä", resp:"", amount:"", note:"", needsInput:true},
+  {group:"Jälkiruoka", name:"Irtokarkkeja (karkkinurkka)", resp:"", amount:"", note:"Muista kulhot!", needsInput:true},
+
+  {group:"Yöpala – Banh Mi", name:"Patonkeja / pehmeitä sämpylöitä", resp:"", amount:"", note:""},
+  {group:"Yöpala – Banh Mi", name:"Gluteenittomia sämpylöitä", resp:"", amount:"", note:"2+1 gluteenitonta vierasta", needsInput:true},
+  {group:"Yöpala – Banh Mi", name:"Possunkylkeä (täyte)", resp:"", amount:"", note:"", needsInput:true},
+  {group:"Yöpala – Banh Mi", name:"Porkkanaa (pikkeliin)", resp:"", amount:"", note:""},
+  {group:"Yöpala – Banh Mi", name:"Retiisiä/daikonia (pikkeliin)", resp:"", amount:"", note:""},
+  {group:"Yöpala – Banh Mi", name:"Kurkkua", resp:"", amount:"", note:""},
+  {group:"Yöpala – Banh Mi", name:"Tuoretta korianteria", resp:"", amount:"", note:""},
+  {group:"Yöpala – Banh Mi", name:"Majoneesia", resp:"", amount:"", note:""},
+  {group:"Yöpala – Banh Mi", name:"Srirachaa tai muuta chilikastiketta", resp:"", amount:"", note:""},
+  {group:"Yöpala – Banh Mi", name:"Soijakastiketta", resp:"", amount:"", note:""},
+  {group:"Yöpala – Banh Mi", name:"Viinietikkaa, sokeria (pikkeliliemi)", resp:"", amount:"", note:""},
+
+  {group:"Brunssi", name:"Kaurahiutaleita (puuro)", resp:"", amount:"", note:"", needsInput:true},
+  {group:"Brunssi", name:"Maitoa / laktoositonta maitoa (puuro)", resp:"", amount:"", note:"", needsInput:true},
+  {group:"Brunssi", name:"Karjalanpiirakat", resp:"Liina (tilattu)", amount:"150 kpl laktoositonta + 20 maidotonta/gluteenitonta", note:"Haetaan valmiina, Erkki su klo 10"},
+  {group:"Brunssi", name:"Voita (munavoihin)", resp:"", amount:"", note:""},
+  {group:"Brunssi", name:"Kananmunia (munavoi + sellaisenaan)", resp:"", amount:"", note:"", needsInput:true},
+  {group:"Brunssi", name:"Hapanjuurileipää", resp:"", amount:"", note:"Huomioi myös gluteeniton leipä", needsInput:true},
+  {group:"Brunssi", name:"Kinkkua", resp:"", amount:"", note:"", needsInput:true},
+  {group:"Brunssi", name:"Juustoa", resp:"", amount:"", note:"Mikä juusto?", needsInput:true},
+  {group:"Brunssi", name:"Tuoreita kasviksia (esim. kurkku, tomaatti, paprika)", resp:"", amount:"", note:"", needsInput:true},
+  {group:"Brunssi", name:"Tuoremehua", resp:"", amount:"", note:"", needsInput:true},
+  {group:"Brunssi", name:"Kahvia", resp:"", amount:"", note:"", needsInput:true},
+  {group:"Brunssi", name:"Teetä", resp:"", amount:"", note:"", needsInput:true},
+  {group:"Brunssi", name:"Graavilohi", resp:"", amount:"", note:"Edellisen päivän savulohi/graavilohi – ei uutta ostosta"},
+
+  {group:"Juomat", name:"Viini 1", resp:"", amount:"", note:"", needsInput:true},
+  {group:"Juomat", name:"Viini 2", resp:"", amount:"", note:"", needsInput:true},
+  {group:"Juomat", name:"Viini 3", resp:"", amount:"", note:"", needsInput:true},
+  {group:"Juomat", name:"Mehu 1", resp:"", amount:"", note:"", needsInput:true},
+  {group:"Juomat", name:"Mehu 2", resp:"", amount:"", note:"", needsInput:true},
+  {group:"Juomat", name:"Malmgård-olut, 2 kegiä", resp:"Pekka", amount:"2 kegiä", note:""},
+];
+
+/* ========================================================================= */
+
+function slug(str){
+  return str.toLowerCase()
+    .replace(/[äå]/g,'a').replace(/ö/g,'o')
+    .replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+}
+function assignIds(data, prefix){
+  const counts = {};
+  data.forEach(item=>{
+    const base = prefix + '-' + slug(item.group) + '-' + slug(item.name);
+    counts[base] = (counts[base]||0)+1;
+    item.id = counts[base] > 1 ? base + '-' + counts[base] : base;
+  });
+}
+assignIds(MISE_DATA, 'mise');
+assignIds(RAAKA_DATA, 'raaka');
+
+const STORAGE_KEY = 'pekka-liina-90v-v1';
+
+function loadState(){
+  try{
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+  }catch(e){ return {}; }
+}
+function saveState(state){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+let state = loadState();
+
+function getItemState(id){
+  return state[id] || {done:false};
+}
+function setItemState(id, patch){
+  state[id] = Object.assign({}, getItemState(id), patch);
+  saveState(state);
+}
+
+function renderList(data, containerId){
+  const container = document.getElementById(containerId);
+  const groups = [];
+  data.forEach(item=>{
+    let g = groups.find(g=>g.name===item.group);
+    if(!g){ g = {name:item.group, items:[]}; groups.push(g); }
+    g.items.push(item);
+  });
+
+  container.innerHTML = groups.map(g=>{
+    const rows = g.items.map(item=>{
+      const st = getItemState(item.id);
+      const resp = (st.resp !== undefined) ? st.resp : (item.resp||'');
+      const amount = (st.amount !== undefined) ? st.amount : (item.amount||'');
+      const done = !!st.done;
+      const respNeedsInput = item.needsInput && !resp;
+      const amtNeedsInput = item.needsInput && !amount;
+      return `
+        <div class="item ${done?'done':''}" data-id="${item.id}">
+          <input type="checkbox" data-id="${item.id}" ${done?'checked':''}>
+          <div class="item-body">
+            <div class="item-name">${item.name}${item.needsInput && !resp && !amount ? '<span class="tarkista-flag">TARKISTA</span>' : ''}</div>
+            <div class="item-meta">
+              <div class="meta-field">
+                <label>Vastuu:</label>
+                <input type="text" class="${respNeedsInput?'needs-input':''}" data-id="${item.id}" data-field="resp" value="${resp.replace(/"/g,'&quot;')}" placeholder="kuka?">
+              </div>
+              <div class="meta-field">
+                <label>Määrä:</label>
+                <input type="text" class="${amtNeedsInput?'needs-input':''}" data-id="${item.id}" data-field="amount" value="${amount.replace(/"/g,'&quot;')}" placeholder="paljonko?">
+              </div>
+            </div>
+            ${item.note ? `<div class="note">${item.note}</div>` : ''}
+          </div>
+        </div>`;
+    }).join('');
+    const total = g.items.length;
+    return `
+      <div class="group">
+        <div class="group-title"><span>${g.name}</span><span class="count" data-group-count="${g.name}">0/${total}</span></div>
+        ${rows}
+      </div>`;
+  }).join('');
+
+  container.querySelectorAll('input[type=checkbox]').forEach(cb=>{
+    cb.addEventListener('change', e=>{
+      setItemState(e.target.dataset.id, {done: e.target.checked});
+      e.target.closest('.item').classList.toggle('done', e.target.checked);
+      updateProgress();
+    });
+  });
+  container.querySelectorAll('input[type=text]').forEach(inp=>{
+    inp.addEventListener('input', e=>{
+      const patch = {};
+      patch[e.target.dataset.field] = e.target.value;
+      setItemState(e.target.dataset.id, patch);
+      e.target.classList.remove('needs-input');
+    });
+  });
+
+  updateGroupCounts(data, containerId);
+}
+
+function updateGroupCounts(data, containerId){
+  const container = document.getElementById(containerId);
+  const byGroup = {};
+  data.forEach(item=>{
+    byGroup[item.group] = byGroup[item.group] || {done:0,total:0};
+    byGroup[item.group].total++;
+    if(getItemState(item.id).done) byGroup[item.group].done++;
+  });
+  Object.keys(byGroup).forEach(g=>{
+    const el = container.querySelector(`[data-group-count="${CSS.escape(g)}"]`);
+    if(el) el.textContent = `${byGroup[g].done}/${byGroup[g].total}`;
+  });
+}
+
+function currentTabData(){
+  const active = document.querySelector('.tab-btn.active').dataset.tab;
+  if(active==='mise') return {data:MISE_DATA, containerId:'tab-mise'};
+  if(active==='raaka') return {data:RAAKA_DATA, containerId:'tab-raaka'};
+  return null;
+}
+
+function updateProgress(){
+  const t = currentTabData();
+  const wrap = document.getElementById('progressWrap');
+  if(!t){ wrap.style.display='none'; return; }
+  wrap.style.display='block';
+  const done = t.data.filter(i=>getItemState(i.id).done).length;
+  const total = t.data.length;
+  const pct = total ? Math.round(done/total*100) : 0;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = `${done} / ${total} tehty (${pct}%)`;
+  updateGroupCounts(t.data, t.containerId);
+}
+
+// tabs
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+    updateProgress();
+  });
+});
+
+// budjetti notes
+const budjettiEl = document.getElementById('budjettiNotes');
+budjettiEl.value = state['budjetti-notes'] ? state['budjetti-notes'].text || '' : '';
+budjettiEl.addEventListener('input', e=>{
+  state['budjetti-notes'] = {text: e.target.value};
+  saveState(state);
+});
+document.querySelectorAll('#tab-budjetti input[type=checkbox]').forEach(cb=>{
+  const st = getItemState(cb.dataset.id);
+  cb.checked = !!st.done;
+  cb.closest('.item').classList.toggle('done', cb.checked);
+  cb.addEventListener('change', e=>{
+    setItemState(e.target.dataset.id, {done:e.target.checked});
+    e.target.closest('.item').classList.toggle('done', e.target.checked);
+  });
+});
+
+// reset
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  const activeTab = document.querySelector('.tab-btn.active').dataset.tab;
+  const label = activeTab==='mise' ? 'Mise-listan' : activeTab==='raaka' ? 'Raaka-ainelistan' : 'Budjetti-välilehden';
+  if(!confirm(`Nollataanko ${label} kaikki merkinnät tässä selaimessa? Tätä ei voi perua.`)) return;
+  const data = activeTab==='mise' ? MISE_DATA : activeTab==='raaka' ? RAAKA_DATA : null;
+  if(data){
+    data.forEach(item=>{ delete state[item.id]; });
+    saveState(state);
+    renderList(data, activeTab==='mise'?'tab-mise':'tab-raaka');
+  } else {
+    delete state['budjetti-notes'];
+    delete state['muista1'];
+    delete state['muista2'];
+    saveState(state);
+    budjettiEl.value = '';
+    document.querySelectorAll('#tab-budjetti input[type=checkbox]').forEach(cb=>{cb.checked=false; cb.closest('.item').classList.remove('done');});
+  }
+  updateProgress();
+});
+
+renderList(MISE_DATA, 'tab-mise');
+renderList(RAAKA_DATA, 'tab-raaka');
+updateProgress();
+</script>
+</body>
+</html>
