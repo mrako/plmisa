@@ -1,4 +1,4 @@
-import type { Section, Task, TaskState } from "./types";
+import { DAYS, type Section, type Task, type TaskState } from "./types";
 
 const MAX_SECTIONS = 50;
 const MAX_TASKS_PER_SECTION = 500;
@@ -30,7 +30,9 @@ function isValidTask(value: unknown): value is Task {
     (task.note === undefined ||
       (typeof task.note === "string" && task.note.length <= MAX_NOTE_LENGTH)) &&
     (task.group === undefined ||
-      (typeof task.group === "string" && task.group.length <= MAX_GROUP_LENGTH))
+      (typeof task.group === "string" && task.group.length <= MAX_GROUP_LENGTH)) &&
+    (task.day === undefined ||
+      (typeof task.day === "string" && (DAYS as readonly string[]).includes(task.day)))
   );
 }
 

@@ -1,3 +1,6 @@
+export const DAYS = ["To", "Pe", "La", "Su"] as const;
+export type Day = (typeof DAYS)[number];
+
 export type Task = {
   id: string;
   text: string;
@@ -5,6 +8,7 @@ export type Task = {
   responsible?: string;
   note?: string;
   group?: string;
+  day?: Day;
 };
 
 export type Section = {

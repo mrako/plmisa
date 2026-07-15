@@ -1,4 +1,4 @@
-import type { Task } from "./types";
+import type { Day, Task } from "./types";
 
 type SeedItem = {
   group: string;
@@ -7,6 +7,7 @@ type SeedItem = {
   amount?: string;
   note?: string;
   needsInput?: boolean;
+  day?: Day;
 };
 
 function slug(str: string): string {
@@ -39,151 +40,134 @@ export function buildTasksFromSeed(items: SeedItem[], prefix: string): Task[] {
       responsible: item.resp || undefined,
       note: item.note || undefined,
       group: item.group || undefined,
+      day: item.day,
     };
   });
 }
 
-/* Seed data transcribed from seeds-review.md (Pekka + Liina 90v suunnitelma). */
+/* Seed data reconciled with the live production list (Pekka + Liina 90v suunnitelma).
+   Deletions/additions made live in the app have been carried over here.
+   `day` is a best-effort guess — please review and correct. */
 
 export const TODO_SEED: SeedItem[] = [
-  { group: "", name: "Tarjoiluastiat ja ottimet", resp: "Liina" },
-  { group: "", name: "Jäkälänmetsästys", resp: "Marko" },
-  { group: "", name: "Banh Mi -sämpylät" },
-  { group: "", name: "Sunnuntain leipä" },
-  { group: "", name: "Flan-resepti + aineet" },
-  { group: "", name: "Ruokavalioiden tarkistus" },
-  { group: "", name: "Lounaan ja Yöpalan astiat" },
+  { group: "", name: "Tarjoiluastiat ja ottimet", resp: "Liina", day: "Pe" },
+  { group: "", name: "Jäkälänmetsästys", resp: "Marko", day: "Pe" },
+  { group: "", name: "Banh Mi -sämpylät", day: "Pe" },
+  { group: "", name: "Sunnuntain leipä", day: "Pe" },
+  { group: "", name: "Flan-resepti + aineet", day: "Pe" },
+  { group: "", name: "Ruokavalioiden tarkistus", day: "Pe" },
+  { group: "", name: "Lounaan ja Yöpalan astiat", day: "Pe" },
 ];
 
 export const MISE_SEED: SeedItem[] = [
   // --- Yleiset valmistelut ---
-  { group: "Yleiset", name: "Astiat päivälliselle", resp: "Liina" },
-  { group: "Yleiset", name: "Viinit (valinta ja tilaus)" },
-  { group: "Yleiset", name: "Kahvin keitto ja säilytys", note: "Kesälahdella perkolaattori (n. 90 kuppia) + 2 x 3 l termaria" },
-  { group: "Yleiset", name: "Jälkiruoan astiat" },
-  { group: "Yleiset", name: "Lounaan juoma" },
-  { group: "Yleiset", name: "Focaccia", resp: "Iida" },
+  { group: "Yleiset", name: "Kahvin keitto ja säilytys", note: "Kesälahdella perkolaattori (n. 90 kuppia) + 2 x 3 l termaria", day: "Pe" },
+  { group: "Yleiset", name: "Jälkiruoan astiat", day: "Pe" },
+  { group: "Yleiset", name: "Lounaan juoma", day: "Pe" },
 
   // --- Lauantai: Lounas 13-14.45 ---
-  { group: "Lounas", name: "Gazpacho", resp: "Dima", amount: "10–12 L", note: "10 l kattilat löytyy Kesälahdelta" },
-  { group: "Lounas", name: "Pico de Gallo (mansikka-tomaatti)", resp: "Marko, Laura, Iida?", amount: "2 L", note: "Valmistus samana aamuna" },
-  { group: "Lounas", name: "Tuore leipä (paahdetaan esim. grillillä)" },
-  { group: "Lounas", name: "Focaccia", resp: "Iida", amount: "3–4 kpl", note: "Valmistus edellisenä päivänä" },
+  { group: "Lounas", name: "Gazpacho", resp: "Dima", amount: "10–12 L", note: "10 l kattilat löytyy Kesälahdelta", day: "La" },
+  { group: "Lounas", name: "Pico de Gallo (mansikka-tomaatti)", resp: "Marko, Laura, Iida?", amount: "2 L", note: "Valmistus samana aamuna", day: "La" },
+  { group: "Lounas", name: "Tuore leipä (paahdetaan esim. grillillä)", day: "La" },
+  { group: "Lounas", name: "Focaccia", resp: "Iida", amount: "3–4 kpl", note: "Valmistus edellisenä päivänä", day: "La" },
 
-  // --- Päivällinen: Sälä ---
-  { group: "Päivällinen", name: "Boquerones", resp: "Marko", note: "Laivurin valinnasta" },
-  { group: "Päivällinen", name: "Skagen", resp: "Marko", amount: "2 L", note: "Valmistus la aamulla" },
-  { group: "Päivällinen", name: "Oliivit", resp: "Marko", amount: "2 kg", note: "Rolling cheese" },
-  { group: "Päivällinen", name: "Manchego", resp: "Marko", amount: "2 kg", note: "Rolling cheese" },
-  { group: "Päivällinen", name: "Saaristolaisleipä", resp: "Mari", amount: "5–6 leipää (1 pala / hlö)", note: "Villa Mari" },
-  { group: "Päivällinen", name: "Leikkeleet", resp: "Marko", amount: "max 2 kg", note: "Rolling cheese" },
-
-  // --- Päivällinen: Kasvit ---
-  { group: "Päivällinen", name: "Vihreä salaatti" },
-  { group: "Päivällinen", name: "Joku toinen salaatti" },
-  { group: "Päivällinen", name: "Versot", resp: "Marko" },
-  { group: "Päivällinen", name: "Pikkelit (kurkut, punasipuli)", resp: "Iida", note: "Tehdään pari päivää ennen" },
-  { group: "Päivällinen", name: "Jääretiisi", resp: "Marko", note: "Sheivaus ja jää" },
-
-  // --- Päivällinen: Proteiini ---
-  { group: "Päivällinen", name: "Entrecote", amount: "4–5 kg" },
-  { group: "Päivällinen", name: "Savulohi", amount: "4–5 kg" },
-  { group: "Päivällinen", name: "Mukulaselleri", amount: "1–2 kg" },
-  { group: "Päivällinen", name: "Marinoitu tofu", amount: "1 kg" },
+  // --- Päivällinen ---
+  { group: "Päivällinen", name: "Saaristolaisleipä", resp: "Mari", amount: "5–6 leipää (1 pala / hlö)", note: "Villa Mari", day: "La" },
+  { group: "Päivällinen", name: "Skagen", resp: "Marko", day: "La" },
+  { group: "Päivällinen", name: "Vihreä salaatti", day: "La" },
+  { group: "Päivällinen", name: "Joku toinen salaatti", day: "La" },
+  { group: "Päivällinen", name: "Pikkelit (kurkut, punasipuli)", resp: "Iida", note: "Tehdään pari päivää ennen", day: "La" },
+  { group: "Päivällinen", name: "Jääretiisi", resp: "Marko", note: "Sheivaus ja jää", day: "La" },
+  { group: "Päivällinen", name: "Entrecote", amount: "4–5 kg", day: "La" },
+  { group: "Päivällinen", name: "Savulohi", amount: "4–5 kg", day: "La" },
+  { group: "Päivällinen", name: "Mukulaselleri", amount: "1–2 kg", day: "La" },
+  { group: "Päivällinen", name: "Marinoitu tofu", amount: "1 kg", day: "La" },
 
   // --- Jälkiruoka ---
-  { group: "Jälkiruoka", name: "Flan", resp: "Dima" },
-  { group: "Jälkiruoka", name: "Mansikat", resp: "Liina", amount: "5 x 40 l laatikkoa", note: "Haku pe aamupäivällä" },
-  { group: "Jälkiruoka", name: "Keksit", resp: "Iiris", amount: "120 kpl" },
-  { group: "Jälkiruoka", name: "Kahvi / Tee", resp: "Marko", amount: "12–16 L" },
-  { group: "Jälkiruoka", name: "Karkkinurkka", resp: "Liina", note: "Muista kulhot!" },
+  { group: "Jälkiruoka", name: "Flan", resp: "Dima", day: "La" },
+  { group: "Jälkiruoka", name: "Keksit", resp: "Iiris", amount: "120 kpl", day: "La" },
+  { group: "Jälkiruoka", name: "Kahvi / Tee", resp: "Marko", amount: "12–16 L", day: "La" },
 
   // --- Yöpala ---
-  { group: "Yöpala", name: "Banh Mi -leivät" },
-  { group: "Yöpala", name: "Gluteeniton banh mi" },
-  { group: "Yöpala", name: "Pikkelit (kurkku, punasipuli)", resp: "Iida", note: "Tehdään pari päivää ennen" },
-  { group: "Yöpala", name: "Possunkylki" },
+  { group: "Yöpala", name: "Banh Mi -leivät", day: "La" },
+  { group: "Yöpala", name: "Gluteeniton banh mi", day: "La" },
+  { group: "Yöpala", name: "Possunkylki", day: "La" },
 
   // --- Brunssi ---
-  { group: "Brunssi", name: "Puuro" },
-  { group: "Brunssi", name: "Munavoi", note: "" },
+  { group: "Brunssi", name: "Puuro", day: "Su" },
+  { group: "Brunssi", name: "Munavoi", note: "", day: "Su" },
 ];
 
 export const RAAKA_SEED: SeedItem[] = [
-  { group: "Gazpacho", name: "Tomaatteja (kypsiä)", amount: "8kg", note: "Gazpacho" },
-  { group: "Gazpacho", name: "Kurkkuja", amount: "2kg", note: "Gazpacho" },
-  { group: "Gazpacho", name: "Paprikoita (punainen/keltainen)", amount: "2kg", note: "Gazpacho" },
-  { group: "Gazpacho", name: "Salottisipulia", amount: "1kg", note: "Gazpacho" },
-  { group: "Gazpacho", name: "Valkosipulia", amount: "2", note: "Gazpacho" },
-  { group: "Gazpacho", name: "Oliiviöljyä", note: "Gazpacho" },
-  { group: "Gazpacho", name: "Viinietikkaa (puna- tai valkoviini-)", note: "Gazpacho" },
-  { group: "Gazpacho", name: "Vaaleaa leipää", note: "Gazpacho" },
-  { group: "Gazpacho", name: "Suola" },
-  { group: "Gazpacho", name: "Sokeri" },
-  { group: "Gazpacho", name: "Mustapippuri" },
+  { group: "Gazpacho", name: "Tomaatteja (kypsiä)", amount: "8kg", note: "Gazpacho", day: "La" },
+  { group: "Gazpacho", name: "Kurkkuja", amount: "2kg", note: "Gazpacho", day: "La" },
+  { group: "Gazpacho", name: "Paprikoita (punainen/keltainen)", amount: "2kg", note: "Gazpacho", day: "La" },
+  { group: "Gazpacho", name: "Salottisipulia", amount: "1kg", note: "Gazpacho", day: "La" },
+  { group: "Gazpacho", name: "Valkosipulia", amount: "2", note: "Gazpacho", day: "La" },
+  { group: "Gazpacho", name: "Oliiviöljyä", note: "Gazpacho", day: "La" },
+  { group: "Gazpacho", name: "Viinietikkaa (puna- tai valkoviini-)", note: "Gazpacho", day: "La" },
+  { group: "Gazpacho", name: "Suola", day: "La" },
+  { group: "Gazpacho", name: "Sokeri", day: "La" },
+  { group: "Gazpacho", name: "Mustapippuri", day: "La" },
 
-  { group: "Pico de Gallo", name: "Tomaatteja" },
-  { group: "Pico de Gallo", name: "Mansikoita" },
-  { group: "Pico de Gallo", name: "Punasipulia" },
-  { group: "Pico de Gallo", name: "Tuoretta chiliä / habaneroa" },
-  { group: "Pico de Gallo", name: "Limettejä" },
-  { group: "Pico de Gallo", name: "Korianteri / Persilja / Sitruunaverbena" },
+  { group: "Pico de Gallo", name: "Mansikoita", day: "La" },
+  { group: "Pico de Gallo", name: "Punasipulia", day: "La" },
+  { group: "Pico de Gallo", name: "Tuoretta chiliä / habaneroa", day: "La" },
+  { group: "Pico de Gallo", name: "Limettejä", day: "La" },
+  { group: "Pico de Gallo", name: "Korianteri / Persilja / Sitruunaverbena", day: "La" },
 
-  { group: "Skagen", name: "Katkarapuja", note: "Skagen" },
-  { group: "Skagen", name: "Majoneesia", note: "Skagen" },
-  { group: "Skagen", name: "Purjoa", note: "Skagen" },
-  { group: "Skagen", name: "Chiliä", note: "Skagen" },
-  { group: "Skagen", name: "Sitruunoita", note: "Skagen" },
-  { group: "Skagen", name: "Tilliä", note: "Skagen" },
-  { group: "Skagen", name: "Ruohosipulia", note: "Skagen" },
+  { group: "Skagen", name: "Katkarapuja", note: "Skagen", day: "La" },
+  { group: "Skagen", name: "Majoneesia", note: "Skagen", day: "La" },
+  { group: "Skagen", name: "Purjoa", note: "Skagen", day: "La" },
+  { group: "Skagen", name: "Chiliä", note: "Skagen", day: "La" },
+  { group: "Skagen", name: "Sitruunoita", note: "Skagen", day: "La" },
+  { group: "Skagen", name: "Tilliä", note: "Skagen", day: "La" },
+  { group: "Skagen", name: "Ruohosipulia", note: "Skagen", day: "La" },
 
-  { group: "Sälä", name: "Boquerones", amount: "", note: "" },
-  { group: "Sälä", name: "Oliivit", amount: "2 kg" },
-  { group: "Sälä", name: "Manchego-juusto", amount: "2 kg" },
-  { group: "Sälä", name: "Leikkeleet", amount: "max 2 kg" },
+  { group: "Sälä", name: "Boquerones", day: "La" },
+  { group: "Sälä", name: "Oliivit", amount: "2 kg", day: "La" },
+  { group: "Sälä", name: "Manchego-juusto", amount: "2 kg", day: "La" },
+  { group: "Sälä", name: "Leikkeleet", amount: "max 2 kg", day: "La" },
 
-  { group: "Salaatit", name: "Vihreän salaatin ainekset" },
-  { group: "Salaatit", name: "Toisen salaatin ainekset" },
-  { group: "Salaatit", name: "Versot", note: "Petriltä" },
+  { group: "Salaatit", name: "Vihreän salaatin ainekset", day: "La" },
+  { group: "Salaatit", name: "Toisen salaatin ainekset", day: "La" },
+  { group: "Salaatit", name: "Versot", note: "Petriltä", day: "La" },
 
-  { group: "Proteiinit", name: "Entrecote", amount: "4–5 kg" },
-  { group: "Proteiinit", name: "Savulohi", amount: "4–5 kg" },
-  { group: "Proteiinit", name: "Mukulaselleri", amount: "1–2 kg" },
-  { group: "Proteiinit", name: "Marinoitu tofu", amount: "1 kg", note: "Valmis tuote tai marinoidaan itse – TARKISTA" },
+  { group: "Proteiinit", name: "Entrecote", amount: "4–5 kg", day: "La" },
+  { group: "Proteiinit", name: "Savulohi", amount: "4–5 kg", day: "La" },
+  { group: "Proteiinit", name: "Mukulaselleri", amount: "1–2 kg", day: "La" },
+  { group: "Proteiinit", name: "Marinoitu tofu", amount: "1 kg", note: "Valmis tuote tai marinoidaan itse – TARKISTA", day: "La" },
 
-  { group: "Jälkiruoka", name: "Kananmunia (flan)" },
-  { group: "Jälkiruoka", name: "Maitoa / kermaa (flan)", note: "Huomioi 2+1 maidotonta vierasta – tarvitaan maidoton versio tai vaihtoehto" },
-  { group: "Jälkiruoka", name: "Sokeria (flan + karamelli)" },
-  { group: "Jälkiruoka", name: "Vaniljaa" },
-  { group: "Jälkiruoka", name: "Mansikoita", resp: "Liina", amount: "5 x 40 l laatikkoa" },
-  { group: "Jälkiruoka", name: "Keksit", resp: "Marko / Iiris", amount: "120 kpl" },
-  { group: "Jälkiruoka", name: "Kahvia (suodatin)", note: "12–16 L tarve, perkolaattori n. 90 kupille" },
-  { group: "Jälkiruoka", name: "Teetä" },
-  { group: "Jälkiruoka", name: "Irtokarkkeja (karkkinurkka)", note: "Muista kulhot!" },
+  { group: "Jälkiruoka", name: "Kananmunia (flan)", day: "La" },
+  { group: "Jälkiruoka", name: "Maitoa / kermaa (flan)", note: "Huomioi 2+1 maidotonta vierasta – tarvitaan maidoton versio tai vaihtoehto", day: "La" },
+  { group: "Jälkiruoka", name: "Sokeria (flan + karamelli)", day: "La" },
+  { group: "Jälkiruoka", name: "Vaniljaa", day: "La" },
+  { group: "Jälkiruoka", name: "Mansikoita", resp: "Liina", amount: "5 x 40 l laatikkoa", day: "La" },
+  { group: "Jälkiruoka", name: "Keksit", resp: "Marko / Iiris", amount: "120 kpl", day: "La" },
+  { group: "Jälkiruoka", name: "Irtokarkkeja (karkkinurkka)", note: "Muista kulhot!", day: "La" },
 
-  { group: "Yöpala", name: "Patonkeja / pehmeitä sämpylöitä" },
-  { group: "Yöpala", name: "Gluteenittomia sämpylöitä", note: "2+1 gluteenitonta vierasta" },
-  { group: "Yöpala", name: "Possunkylkeä (täyte)" },
-  { group: "Yöpala", name: "Banh Mi -pikkelit" },
-  { group: "Yöpala", name: "Kurkkua" },
-  { group: "Yöpala", name: "Tuoretta korianteria" },
-  { group: "Yöpala", name: "Majoneesia" },
-  { group: "Yöpala", name: "Srirachaa tai muuta chilikastiketta" },
+  { group: "Yöpala", name: "Patonkeja / pehmeitä sämpylöitä", day: "La" },
+  { group: "Yöpala", name: "Gluteenittomia sämpylöitä", note: "2+1 gluteenitonta vierasta", day: "La" },
+  { group: "Yöpala", name: "Possunkylkeä (täyte)", day: "La" },
+  { group: "Yöpala", name: "Banh Mi -pikkelit", day: "La" },
+  { group: "Yöpala", name: "Kurkkua", day: "La" },
+  { group: "Yöpala", name: "Tuoretta korianteria", day: "La" },
+  { group: "Yöpala", name: "Majoneesia", day: "La" },
+  { group: "Yöpala", name: "Srirachaa tai muuta chilikastiketta", day: "La" },
 
-  { group: "Brunssi", name: "Kaurahiutaleita (puuro)" },
-  { group: "Brunssi", name: "Maitoa / laktoositonta maitoa (puuro)" },
-  { group: "Brunssi", name: "Karjalanpiirakat", resp: "Liina (tilattu)", amount: "150 kpl laktoositonta + 20 maidotonta/gluteenitonta", note: "Haetaan valmiina, Erkki su klo 10" },
-  { group: "Brunssi", name: "Voita (munavoihin)" },
-  { group: "Brunssi", name: "Hapanjuurileipää", note: "Huomioi myös gluteeniton leipä" },
-  { group: "Brunssi", name: "Kinkkua" },
-  { group: "Brunssi", name: "Juustoa" },
-  { group: "Brunssi", name: "Tuoreita kasviksia (esim. kurkku, tomaatti, paprika)" },
-  { group: "Brunssi", name: "Tuoremehua" },
-  { group: "Brunssi", name: "Kahvia" },
-  { group: "Brunssi", name: "Teetä" },
+  { group: "Brunssi", name: "Kaurahiutaleita (puuro)", day: "Su" },
+  { group: "Brunssi", name: "Maitoa / laktoositonta maitoa (puuro)", day: "Su" },
+  { group: "Brunssi", name: "Karjalanpiirakat", resp: "Liina (tilattu)", amount: "150 kpl laktoositonta + 20 maidotonta/gluteenitonta", note: "Haetaan valmiina, Erkki su klo 10", day: "Su" },
+  { group: "Brunssi", name: "Voita (munavoihin)", day: "Su" },
+  { group: "Brunssi", name: "Hapanjuurileipää", note: "Huomioi myös gluteeniton leipä", day: "Su" },
+  { group: "Brunssi", name: "Kinkkua", day: "Su" },
+  { group: "Brunssi", name: "Juustoa", day: "Su" },
+  { group: "Brunssi", name: "Tuoremehua", day: "Su" },
+  { group: "Brunssi", name: "Kahvia", day: "Su" },
+  { group: "Brunssi", name: "Teetä", day: "Su" },
 
-  { group: "Juomat", name: "Vishy" },
-  { group: "Juomat", name: "Mehut" },
-  { group: "Juomat", name: "Viinit" },
-  { group: "Juomat", name: "Malmgård-olut, 2 kegiä", resp: "Pekka", amount: "2 kegiä" },
+  { group: "Juomat", name: "Vishy", day: "La" },
+  { group: "Juomat", name: "Mehut", day: "La" },
+  { group: "Juomat", name: "Viinit", day: "La" },
+  { group: "Juomat", name: "Malmgård-olut, 2 kegiä", resp: "Pekka", amount: "2 kegiä", day: "La" },
 ];

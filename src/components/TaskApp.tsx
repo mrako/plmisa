@@ -2,10 +2,18 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import type { Section, TaskState } from "@/lib/types";
+import type { Section, Task, TaskState } from "@/lib/types";
+import { DAYS } from "@/lib/types";
 
 const ALL_FILTER = "all" as const;
 type SectionFilter = string | typeof ALL_FILTER;
+const ALL_DAYS = "all" as const;
+type DayFilter = (typeof DAYS)[number] | typeof ALL_DAYS;
+const LONG_PRESS_MS = 500;
+
+type ModalState =
+  | { mode: "add"; sectionId: string }
+  | { mode: "edit"; sectionId: string; taskId: string };
 
 function createId(): string {
   return typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -18,14 +26,19 @@ export default function TaskApp() {
   const [filter, setFilter] = useState<SectionFilter>(ALL_FILTER);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [newTaskText, setNewTaskText] = useState<Record<string, string>>({});
-  const [newTaskResponsible, setNewTaskResponsible] = useState<Record<string, string>>({});
-  const [newTaskGroup, setNewTaskGroup] = useState<Record<string, string>>({});
-  const [openAddForm, setOpenAddForm] = useState<Record<string, boolean>>({});
   const [searchQuery, setSearchQuery] = useState("");
+  const [dayFilter, setDayFilter] = useState<DayFilter>(ALL_DAYS);
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
   const dragState = useRef<{ sectionId: string; taskId: string } | null>(null);
   const taskRefs = useRef<Map<string, HTMLLIElement>>(new Map());
+
+  const [modal, setModal] = useState<ModalState | null>(null);
+  const [modalText, setModalText] = useState("");
+  const [modalResponsible, setModalResponsible] = useState("");
+  const [modalGroup, setModalGroup] = useState("");
+  const [modalDay, setModalDay] = useState("");
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressTriggered = useRef(false);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -45,6 +58,15 @@ export default function TaskApp() {
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    if (!modal) return;
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setModal(null);
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [modal]);
+
+  useEffect(() => {
     let cancelled = false;
     fetch("/api/state")
       .then((res) => {
@@ -58,7 +80,7 @@ export default function TaskApp() {
       })
       .catch(() => {
         if (cancelled) return;
-        setError("Could not load your tasks. Please refresh the page.");
+        setError("Tehtävien lataus epäonnistui. Päivitä sivu.");
         setLoading(false);
       });
     return () => {
@@ -75,7 +97,7 @@ export default function TaskApp() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(nextState),
       }).catch(() => {
-        setError("Could not save your changes. Please check your connection.");
+        setError("Muutosten tallennus epäonnistui. Tarkista yhteytesi.");
       });
     }, 300);
   }, []);
@@ -92,33 +114,107 @@ export default function TaskApp() {
     [persist]
   );
 
-  function addTask(sectionId: string) {
-    const text = (newTaskText[sectionId] ?? "").trim();
+  function openAddModal(sectionId: string) {
+    setModalText("");
+    setModalResponsible("");
+    setModalGroup("");
+    setModalDay("");
+    setModal({ mode: "add", sectionId });
+  }
+
+  function openEditModal(sectionId: string, task: Task) {
+    setModalText(task.text);
+    setModalResponsible(task.responsible ?? "");
+    setModalGroup(task.group ?? "");
+    setModalDay(task.day ?? "");
+    setModal({ mode: "edit", sectionId, taskId: task.id });
+  }
+
+  function closeModal() {
+    setModal(null);
+  }
+
+  function submitModal(e: React.FormEvent) {
+    e.preventDefault();
+    if (!modal) return;
+    const text = modalText.trim();
     if (!text) return;
-    const responsible = (newTaskResponsible[sectionId] ?? "").trim();
-    const group = (newTaskGroup[sectionId] ?? "").trim();
-    updateSections((sections) =>
-      sections.map((s) =>
-        s.id === sectionId
-          ? {
-              ...s,
-              tasks: [
-                ...s.tasks,
-                {
-                  id: createId(),
-                  text,
-                  done: false,
-                  ...(responsible ? { responsible } : {}),
-                  ...(group ? { group } : {}),
-                },
-              ],
-            }
-          : s
-      )
-    );
-    setNewTaskText((prev) => ({ ...prev, [sectionId]: "" }));
-    setNewTaskResponsible((prev) => ({ ...prev, [sectionId]: "" }));
-    setNewTaskGroup((prev) => ({ ...prev, [sectionId]: "" }));
+    const responsible = modalResponsible.trim();
+    const group = modalGroup.trim();
+    const day = modalDay as (typeof DAYS)[number] | "";
+
+    if (modal.mode === "add") {
+      updateSections((sections) =>
+        sections.map((s) =>
+          s.id === modal.sectionId
+            ? {
+                ...s,
+                tasks: [
+                  ...s.tasks,
+                  {
+                    id: createId(),
+                    text,
+                    done: false,
+                    ...(responsible ? { responsible } : {}),
+                    ...(group ? { group } : {}),
+                    ...(day ? { day } : {}),
+                  },
+                ],
+              }
+            : s
+        )
+      );
+    } else {
+      const { sectionId, taskId } = modal;
+      updateSections((sections) =>
+        sections.map((s) =>
+          s.id === sectionId
+            ? {
+                ...s,
+                tasks: s.tasks.map((t) =>
+                  t.id === taskId
+                    ? {
+                        ...t,
+                        text,
+                        responsible: responsible || undefined,
+                        group: group || undefined,
+                        day: day || undefined,
+                      }
+                    : t
+                ),
+              }
+            : s
+        )
+      );
+    }
+    closeModal();
+  }
+
+  function handleTaskPointerDown(sectionId: string, task: Task) {
+    longPressTriggered.current = false;
+    longPressTimer.current = setTimeout(() => {
+      longPressTriggered.current = true;
+      openEditModal(sectionId, task);
+    }, LONG_PRESS_MS);
+  }
+
+  function handleTaskPointerUp(sectionId: string, taskId: string) {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    if (longPressTriggered.current) {
+      longPressTriggered.current = false;
+      return;
+    }
+    toggleTask(sectionId, taskId);
+  }
+
+  function cancelLongPress() {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
   }
 
   function toggleTask(sectionId: string, taskId: string) {
@@ -194,7 +290,7 @@ export default function TaskApp() {
   if (loading) {
     return (
       <div className="flex flex-1 items-center justify-center text-muted">
-        Loading tasks…
+        Ladataan tehtäviä…
       </div>
     );
   }
@@ -202,7 +298,7 @@ export default function TaskApp() {
   if (!state) {
     return (
       <div className="flex flex-1 items-center justify-center text-warn">
-        {error ?? "Something went wrong."}
+        {error ?? "Jokin meni pieleen."}
       </div>
     );
   }
@@ -277,21 +373,35 @@ export default function TaskApp() {
           </div>
         )}
 
-        <input
-          type="search"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search tasks or responsible…"
-          className="mb-6 w-full rounded-md border border-line bg-card px-3 py-2 text-sm outline-none focus:border-accent sm:max-w-xs"
-        />
+        <div className="mb-6 flex flex-wrap gap-2">
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Hae tehtäviä tai vastuuhenkilöä…"
+            className="w-full flex-1 rounded-md border border-line bg-card px-3 py-2 text-sm outline-none focus:border-accent sm:max-w-xs"
+          />
+          <select
+            value={dayFilter}
+            onChange={(e) => setDayFilter(e.target.value as DayFilter)}
+            className="rounded-md border border-line bg-card px-3 py-2 text-sm outline-none focus:border-accent"
+          >
+            <option value={ALL_DAYS}>Päivä</option>
+            {DAYS.map((d) => (
+              <option key={d} value={d}>
+                {d}
+              </option>
+            ))}
+          </select>
+        </div>
 
         <div className="flex flex-col gap-8">
           {visibleSections.map((section) => {
-            const isFormOpen = Boolean(openAddForm[section.id]);
             const query = searchQuery.trim().toLowerCase();
             const visibleTasks = section.tasks
               .filter((t) => {
                 if (hideDone && t.done) return false;
+                if (dayFilter !== ALL_DAYS && t.day !== dayFilter) return false;
                 if (!query) return true;
                 return (
                   t.text.toLowerCase().includes(query) ||
@@ -315,8 +425,8 @@ export default function TaskApp() {
                       type="button"
                       onClick={toggleHideDone}
                       aria-pressed={hideDone}
-                      aria-label={hideDone ? "Show finished tasks" : "Hide finished tasks"}
-                      title={hideDone ? "Show finished tasks" : "Hide finished tasks"}
+                      aria-label={hideDone ? "Näytä tehdyt tehtävät" : "Piilota tehdyt tehtävät"}
+                      title={hideDone ? "Näytä tehdyt tehtävät" : "Piilota tehdyt tehtävät"}
                       className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition-colors ${
                         hideDone
                           ? "border-accent bg-accent text-white"
@@ -327,17 +437,12 @@ export default function TaskApp() {
                     </button>
                     <button
                       type="button"
-                      onClick={() =>
-                        setOpenAddForm((prev) => ({
-                          ...prev,
-                          [section.id]: !prev[section.id],
-                        }))
-                      }
-                      aria-label={isFormOpen ? "Hide add task form" : "Show add task form"}
-                      title={isFormOpen ? "Hide add task form" : "Add a task"}
+                      onClick={() => openAddModal(section.id)}
+                      aria-label="Lisää tehtävä"
+                      title="Lisää tehtävä"
                       className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-line text-accent hover:bg-accent-light"
                     >
-                      {isFormOpen ? "−" : "+"}
+                      +
                     </button>
                   </div>
                 </div>
@@ -346,10 +451,10 @@ export default function TaskApp() {
                   {visibleTasks.length === 0 && (
                     <li className="text-sm text-muted">
                       {section.tasks.length === 0
-                        ? "No tasks yet."
+                        ? "Ei tehtäviä vielä."
                         : query
-                        ? "No matching tasks."
-                        : "All done — finished tasks are hidden."}
+                        ? "Ei osumia."
+                        : "Kaikki tehty — tehdyt tehtävät on piilotettu."}
                     </li>
                   )}
                   {visibleTasks.map((task) => (
@@ -370,7 +475,7 @@ export default function TaskApp() {
                           onPointerUp={handleDragPointerUp}
                           onPointerCancel={handleDragPointerUp}
                           aria-hidden="true"
-                          title="Drag to reorder"
+                          title="Raahaa järjestääksesi"
                           className="shrink-0 cursor-grab touch-none select-none px-0.5 text-muted active:cursor-grabbing"
                         >
                           ⋮⋮
@@ -383,8 +488,12 @@ export default function TaskApp() {
                         className="h-4 w-4 shrink-0 accent-ok"
                       />
                       <div
-                        onClick={() => toggleTask(section.id, task.id)}
-                        className="min-w-0 flex-1 cursor-pointer select-none"
+                        onPointerDown={() => handleTaskPointerDown(section.id, task)}
+                        onPointerUp={() => handleTaskPointerUp(section.id, task.id)}
+                        onPointerLeave={cancelLongPress}
+                        onPointerCancel={cancelLongPress}
+                        onContextMenu={(e) => e.preventDefault()}
+                        className="min-w-0 flex-1 cursor-pointer touch-none select-none"
                       >
                         <div
                           className={`font-heading text-sm font-medium ${
@@ -394,6 +503,11 @@ export default function TaskApp() {
                           {task.text}
                         </div>
                       </div>
+                      {!task.done && task.day && (
+                        <span className="shrink-0 rounded-full border border-line px-2 py-0.5 text-xs font-medium text-muted">
+                          {task.day}
+                        </span>
+                      )}
                       {!task.done && task.responsible && (
                         <span className="order-last ml-7 flex w-full flex-wrap gap-1 sm:ml-0 sm:contents">
                           {task.responsible
@@ -413,12 +527,12 @@ export default function TaskApp() {
                       {task.done && (
                         <button
                           onClick={() => {
-                            if (window.confirm(`Delete task "${task.text}"?`)) {
+                            if (window.confirm(`Poistetaanko tehtävä "${task.text}"?`)) {
                               deleteTask(section.id, task.id);
                             }
                           }}
-                          aria-label={`Delete task ${task.text}`}
-                          title="Delete task"
+                          aria-label={`Poista tehtävä ${task.text}`}
+                          title="Poista tehtävä"
                           className="shrink-0 rounded p-1 text-muted hover:bg-warn-bg hover:text-warn"
                         >
                           ✕
@@ -427,65 +541,99 @@ export default function TaskApp() {
                     </li>
                   ))}
                 </ul>
-
-                {isFormOpen && (
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      addTask(section.id);
-                    }}
-                    className="flex flex-col gap-2"
-                  >
-                    <input
-                      autoFocus
-                      value={newTaskText[section.id] ?? ""}
-                      onChange={(e) =>
-                        setNewTaskText((prev) => ({ ...prev, [section.id]: e.target.value }))
-                      }
-                      placeholder="Add a task…"
-                      maxLength={500}
-                      className="min-w-0 w-full rounded-md border border-line px-2.5 py-1.5 text-sm outline-none focus:border-accent"
-                    />
-                    <div className="flex gap-2">
-                      <input
-                        value={newTaskGroup[section.id] ?? ""}
-                        onChange={(e) =>
-                          setNewTaskGroup((prev) => ({
-                            ...prev,
-                            [section.id]: e.target.value,
-                          }))
-                        }
-                        placeholder="Group"
-                        maxLength={100}
-                        className="w-28 min-w-0 flex-1 rounded-md border border-line px-2.5 py-1.5 text-xs outline-none focus:border-accent sm:w-32 sm:flex-none sm:text-sm"
-                      />
-                      <input
-                        value={newTaskResponsible[section.id] ?? ""}
-                        onChange={(e) =>
-                          setNewTaskResponsible((prev) => ({
-                            ...prev,
-                            [section.id]: e.target.value,
-                          }))
-                        }
-                        placeholder="Responsible"
-                        maxLength={100}
-                        className="w-28 min-w-0 flex-1 rounded-md border border-line px-2.5 py-1.5 text-xs outline-none focus:border-accent sm:w-40 sm:flex-none sm:text-sm"
-                      />
-                      <button
-                        type="submit"
-                        className="rounded-full bg-accent px-3 py-1.5 text-xs font-medium text-white hover:brightness-110 sm:text-sm"
-                      >
-                        Add
-                      </button>
-                    </div>
-                  </form>
-                )}
               </section>
             );
           })}
         </div>
       </main>
       </div>
+
+      {modal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={closeModal}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl bg-card p-5 shadow-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="mb-4 font-heading text-lg font-semibold text-accent">
+              {modal.mode === "add" ? "Lisää tehtävä" : "Muokkaa tehtävää"}
+            </h2>
+            <form onSubmit={submitModal} className="flex flex-col gap-3">
+              <input
+                autoFocus
+                value={modalText}
+                onChange={(e) => setModalText(e.target.value)}
+                placeholder="Tehtävä"
+                maxLength={500}
+                className="w-full rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-accent"
+              />
+              <div className="flex gap-2">
+                <input
+                  value={modalGroup}
+                  onChange={(e) => setModalGroup(e.target.value)}
+                  placeholder="Ryhmä"
+                  maxLength={100}
+                  className="min-w-0 flex-1 rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-accent"
+                />
+                <select
+                  value={modalDay}
+                  onChange={(e) => setModalDay(e.target.value)}
+                  className="rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-accent"
+                >
+                  <option value="">Päivä</option>
+                  {DAYS.map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <input
+                value={modalResponsible}
+                onChange={(e) => setModalResponsible(e.target.value)}
+                placeholder="Vastuuhenkilö(t) (pilkulla eroteltuna)"
+                maxLength={100}
+                className="w-full rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-accent"
+              />
+              <div className="mt-2 flex items-center justify-between gap-2">
+                {modal.mode === "edit" ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (window.confirm(`Poistetaanko tehtävä "${modalText}"?`)) {
+                        deleteTask(modal.sectionId, modal.taskId);
+                        closeModal();
+                      }
+                    }}
+                    className="rounded-full px-3 py-1.5 text-sm font-medium text-warn hover:bg-warn-bg"
+                  >
+                    Poista
+                  </button>
+                ) : (
+                  <span />
+                )}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    className="rounded-full border border-line px-3 py-1.5 text-sm font-medium text-foreground hover:bg-accent-light"
+                  >
+                    Peruuta
+                  </button>
+                  <button
+                    type="submit"
+                    className="rounded-full bg-accent px-4 py-1.5 text-sm font-medium text-white hover:brightness-110"
+                  >
+                    {modal.mode === "add" ? "Lisää" : "Tallenna"}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 
