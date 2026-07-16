@@ -10,6 +10,7 @@ type SectionFilter = string | typeof ALL_FILTER;
 const ALL_DAYS = "all" as const;
 type DayFilter = (typeof DAYS)[number] | typeof ALL_DAYS;
 const LONG_PRESS_MS = 500;
+const POLL_INTERVAL_MS = 10000;
 
 type ModalState =
   | { mode: "add"; sectionId: string }
@@ -89,6 +90,25 @@ export default function TaskApp() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (modal) return;
+    const interval = setInterval(() => {
+      if (saveTimeout.current) return;
+      fetch("/api/state")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data: TaskState | null) => {
+          if (!data || saveTimeout.current) return;
+          setState((current) => {
+            if (!current) return data;
+            if (JSON.stringify(current) === JSON.stringify(data)) return current;
+            return data;
+          });
+        })
+        .catch(() => {});
+    }, POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [modal]);
 
   const persist = useCallback((nextState: TaskState) => {
     setState(nextState);
